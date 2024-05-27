@@ -1,0 +1,19 @@
+using System.Threading.Tasks;
+using Avalonia.Controls;
+using Pap.erNet.ViewModels;
+
+namespace Pap.erNet.Views;
+
+public partial class MainWindow : Window
+{
+    public MainWindow()
+    {
+        InitializeComponent();
+    }
+
+    private async void TabChange(object? sender, SelectionChangedEventArgs e)
+    {
+        if (this.DataContext is MainWindowViewModel dataContext) 
+            await dataContext.WallpaperListViewModel.LoadWallpapers();
+    }
+}
