@@ -1,14 +1,13 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using Pap.erNet.ViewModels;
 using Pap.erNet.Pages;
+using Pap.erNet.ViewModels;
 
 namespace Pap.erNet;
 
 public class ViewLocator : IDataTemplate
 {
-
     public Control? Build(object? data)
     {
         if (data is null)

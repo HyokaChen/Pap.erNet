@@ -1,6 +1,4 @@
-﻿
-
-using System.Reactive.Concurrency;
+﻿using System.Reactive.Concurrency;
 using ReactiveUI;
 
 namespace Pap.erNet.ViewModels;

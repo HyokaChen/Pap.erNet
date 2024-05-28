@@ -9,7 +9,6 @@ namespace Pap.erNet.ViewModels;
 
 public class WallpaperViewModel(Wallpaper wallpaper) : ViewModelBase
 {
-
     private Bitmap? _imageSource;
 
     public Bitmap? ImageSource

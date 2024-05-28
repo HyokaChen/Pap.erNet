@@ -6,6 +6,9 @@
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <CSharpier_Check>true</CSharpier_Check>
+        <CSharpier_LogLevel>Information</CSharpier_LogLevel>
+        <CSharpier_FrameworkVersion>net8.0</CSharpier_FrameworkVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,6 +25,10 @@
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
         <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.10" />
         <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.10" />
+        <PackageReference Include="CSharpier.MsBuild" Version="0.28.2">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>

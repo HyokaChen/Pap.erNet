@@ -10,10 +10,9 @@ namespace Pap.erNet.ViewModels;
 
 public class WallpaperListViewModel : ViewModelBase
 {
-
     private CancellationToken? _cancellationToken;
 
-    private WallpaperListService _service = new ();
+    private WallpaperListService _service = new();
 
     public async Task LoadWallpapers()
     {
@@ -35,6 +34,6 @@ public class WallpaperListViewModel : ViewModelBase
             await viewModel.LoadImage();
         }
     }
-    
+
     public ObservableCollection<WallpaperViewModel> WallpaperListItems { get; set; } = [];
 }

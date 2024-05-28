@@ -2,6 +2,4 @@
 
 namespace Pap.erNet.ViewModels;
 
-public class ViewModelBase : ReactiveObject
-{
-}
+public class ViewModelBase : ReactiveObject { }

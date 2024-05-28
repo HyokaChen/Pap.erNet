@@ -13,7 +13,7 @@ public partial class MainWindow : Window
 
     private async void TabChange(object? sender, SelectionChangedEventArgs e)
     {
-        if (this.DataContext is MainWindowViewModel dataContext) 
+        if (this.DataContext is MainWindowViewModel dataContext)
             await dataContext.WallpaperListViewModel.LoadWallpapers();
     }
 }
