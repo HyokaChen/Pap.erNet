@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using HotAvalonia;
 using Pap.erNet.ViewModels;
 using Pap.erNet.Views;
 
@@ -10,6 +11,7 @@ public partial class App : Application
 {
     public override void Initialize()
     {
+        this.EnableHotReload();
         AvaloniaXamlLoader.Load(this);
     }
 

@@ -4,12 +4,37 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="600"
              xmlns:vm="using:Pap.erNet.ViewModels"
+             xmlns:asyncImageLoader="using:Pap.erNet.Utils"
              x:Class="Pap.erNet.Pages.Home.WallpaperView"
              x:DataType="vm:WallpaperViewModel"
              >
     <Panel PointerEntered="GotEnter" PointerExited="GotExit">
-        <Image Width="300" Height="200" Stretch="UniformToFill" Source="{Binding ImageSource}"></Image>
-        <TextBlock x:Name="Author" IsVisible="False" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0 0 0 24 " Text="{Binding Author}"></TextBlock>
+        <Image Width="300" Height="200" Stretch="UniformToFill"
+               asyncImageLoader:ImageLoader.Thumbnail="{Binding ThumbnailSource}"
+               asyncImageLoader:ImageLoader.Source="{Binding ImageSource}"></Image>
+        <Button x:Name="Author" IsVisible="False" FontSize="12" HorizontalAlignment="Center" Classes="hyperlink"
+                VerticalAlignment="Bottom" Margin="0 0 0 24 " 
+                Command="{Binding VisitBrowserCommand}"
+                CommandParameter="{Binding ImageSource}"
+                Content="{Binding Author}">
+            <Button.Styles>
+                <Style Selector="Button.hyperlink">
+                    <Setter Property="Template">
+                        <ControlTemplate>
+                            <TextBlock Text="{TemplateBinding Content}">
+                                <TextBlock.Styles>
+                                    <Style Selector="TextBlock:pointerover">
+                                        <Setter Property="TextDecorations" Value="Underline"></Setter>
+                                    </Style>
+                                </TextBlock.Styles>
+                            </TextBlock>
+                        </ControlTemplate>
+                    </Setter>
+                    <Setter Property="Background" Value="Transparent"></Setter>
+                    <Setter Property="BorderThickness" Value="0"></Setter>
+                </Style>
+            </Button.Styles>
+        </Button>
         <Border x:Name="ResolutionRatio" Background="#2b465c" Width="25" Height="25" 
                 HorizontalAlignment="Right" 
                 CornerRadius="4"

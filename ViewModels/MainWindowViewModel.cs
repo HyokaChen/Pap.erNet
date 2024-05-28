@@ -10,9 +10,9 @@ public class MainWindowViewModel : ViewModelBase
         RxApp.MainThreadScheduler.Schedule(FirstLoadImages);
     }
 
-    private async void FirstLoadImages()
+    private void FirstLoadImages()
     {
-        await WallpaperListViewModel.LoadWallpapers();
+        WallpaperListViewModel.LoadWallpapers();
     }
 
     public WallpaperListViewModel WallpaperListViewModel { get; set; } = new();

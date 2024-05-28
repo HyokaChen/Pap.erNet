@@ -11,9 +11,9 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
-    private async void TabChange(object? sender, SelectionChangedEventArgs e)
+    private void TabChange(object? sender, SelectionChangedEventArgs e)
     {
         if (this.DataContext is MainWindowViewModel dataContext)
-            await dataContext.WallpaperListViewModel.LoadWallpapers();
+            dataContext.WallpaperListViewModel.LoadWallpapers();
     }
 }
