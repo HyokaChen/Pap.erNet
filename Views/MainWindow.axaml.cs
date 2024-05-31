@@ -16,4 +16,6 @@ public partial class MainWindow : Window
         if (this.DataContext is MainWindowViewModel dataContext)
             dataContext.WallpaperListViewModel.LoadWallpapers();
     }
+
+    private void Panel_LostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e) { }
 }

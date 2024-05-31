@@ -1,7 +1,10 @@
 using System;
+using System.Reactive;
+using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using HotAvalonia;
 using Pap.erNet.ViewModels;
@@ -21,8 +24,21 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var vm = new MainWindowViewModel { IsShowWallpaperWindow = false };
-            desktop.MainWindow = new MainWindow { DataContext = vm, };
+            var vm = new MainWindowViewModel();
+            var mw = new MainWindow { DataContext = vm, ShowInTaskbar = false };
+            desktop.MainWindow = mw;
+            InputElement.LostFocusEvent.Raised.Subscribe(
+                new AnonymousObserver<(object, Avalonia.Interactivity.RoutedEventArgs)>(
+                    (s) =>
+                    {
+                        var sender = s.Item1;
+                        if (sender is MainWindow mainWindow)
+                        {
+                            mainWindow.Hide();
+                        }
+                    }
+                )
+            );
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -32,5 +48,20 @@ public partial class App : Application
     {
         if (this.DataContext is MainWindowViewModel dataContext)
             dataContext.WallpaperListViewModel.LoadWallpapers();
+    }
+
+    private void TrayIcon_Clicked(object? sender, System.EventArgs e)
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            if (desktop.MainWindow!.IsVisible)
+            {
+                desktop.MainWindow.Hide();
+            }
+            else if (!desktop.MainWindow.IsVisible)
+            {
+                desktop.MainWindow.Show();
+            }
+        }
     }
 }

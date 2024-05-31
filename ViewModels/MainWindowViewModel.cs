@@ -16,18 +16,5 @@ public class MainWindowViewModel : ViewModelBase
         WallpaperListViewModel.LoadWallpapers();
     }
 
-    public void SetShowWallpaperWindow()
-    {
-        IsShowWallpaperWindow = !IsShowWallpaperWindow;
-    }
-
     public WallpaperListViewModel WallpaperListViewModel { get; set; } = new();
-
-    private bool _isShowWallpaperWindow;
-
-    public bool IsShowWallpaperWindow
-    {
-        get => _isShowWallpaperWindow;
-        set => this.RaiseAndSetIfChanged(ref _isShowWallpaperWindow, value);
-    }
 }
