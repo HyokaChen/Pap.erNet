@@ -12,6 +12,8 @@
                    TransparencyLevelHint="AcrylicBlur"
                    Background="Transparent"
                    Width="300" Height="600"
+                   x:Name="WallpaperWindow"
+                   IsVisible="{Binding IsShowWallpaperWindow}"
                    ExtendClientAreaToDecorationsHint="True"
                    >
     <Design.DataContext>

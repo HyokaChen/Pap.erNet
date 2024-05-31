@@ -1,16 +1,34 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pap.erNet.ViewModels"
+             x:DataType="vm:MainWindowViewModel"
              x:Class="Pap.erNet.App"
              xmlns:local="using:Pap.erNet"
              RequestedThemeVariant="Dark"
+             xmlns:home="clr-namespace:Pap.erNet.Pages.Home"
              >
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
-
+     <Design.DataContext>
+         <!-- This only sets the DataContext for the previewer in an IDE,
+     to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+         <vm:MainWindowViewModel/>
+     </Design.DataContext>
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
+
   
     <Application.Styles>
         <FluentTheme/>
     </Application.Styles>
+    <TrayIcon.Icons>
+        <TrayIcons>
+             <TrayIcon Icon="/Assets/logo.ico"
+                       ToolTipText="Pap.erNet0.0.1"
+                       MacOSProperties.IsTemplateIcon="true"
+                       Command="{Binding SetShowWallpaperWindow}"
+                       >
+             </TrayIcon>
+        </TrayIcons>
+    </TrayIcon.Icons>
 </Application>
