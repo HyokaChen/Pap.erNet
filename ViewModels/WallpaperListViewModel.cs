@@ -1,10 +1,6 @@
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Reactive.Concurrency;
-using System.Threading;
 using System.Threading.Tasks;
 using Pap.erNet.Services;
-using ReactiveUI;
 
 namespace Pap.erNet.ViewModels;
 
@@ -12,26 +8,16 @@ public class WallpaperListViewModel : ViewModelBase
 {
     private readonly WallpaperListService _service = new();
 
-    public void LoadWallpapers()
+    public async Task LoadWallpapersAsync()
     {
+        // TODO: use next to load 10 items/per
         WallpaperListItems.Clear();
-        var items = _service.GetItems();
-        foreach (var wallpaper in items)
+        await foreach (var wallpaper in _service.DiscoverItemsAsync())
         {
             var wallpaperViewModel = new WallpaperViewModel(wallpaper);
             WallpaperListItems.Add(wallpaperViewModel);
         }
-
-        // await LoadImages();
     }
-
-    // private async Task LoadImages()
-    // {
-    //     foreach (var viewModel in WallpaperListItems.ToList())
-    //     {
-    //         await viewModel.LoadImage();
-    //     }
-    // }
 
     public ObservableCollection<WallpaperViewModel> WallpaperListItems { get; set; } = [];
 }

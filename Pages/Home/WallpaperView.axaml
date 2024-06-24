@@ -15,7 +15,7 @@
         <Button x:Name="Author" IsVisible="False" FontSize="12" HorizontalAlignment="Center" Classes="hyperlink"
                 VerticalAlignment="Bottom" Margin="0 0 0 24 " 
                 Command="{Binding VisitBrowserCommand}"
-                CommandParameter="{Binding ImageSource}"
+                CommandParameter="{Binding Link}"
                 Content="{Binding Author}">
             <Button.Styles>
                 <Style Selector="Button.hyperlink">
@@ -35,6 +35,20 @@
                 </Style>
             </Button.Styles>
         </Button>
+		<Border x:Name="SetDeskWallpaper" Background="Black" Width="100" Height="30"
+                HorizontalAlignment="Center"
+                CornerRadius="4"
+                Opacity="0.5"
+                IsVisible="False"
+			    PointerEntered="SetDeskWallpaper_PointerEntered"
+				PointerExited="SetDeskWallpaper_PointerExited"
+				PointerPressed="SetDeskWallpaper_PointerPressed"
+                VerticalAlignment="Center" Margin="0 20 20 0 "
+                >
+			<TextBlock FontSize="14" FontWeight="Bold"
+                Foreground="White" HorizontalAlignment="Center"
+                       VerticalAlignment="Center" Text="设为桌面"></TextBlock>
+		</Border>
         <Border x:Name="ResolutionRatio" Background="#2b465c" Width="25" Height="25" 
                 HorizontalAlignment="Right" 
                 CornerRadius="4"

@@ -1,11 +1,7 @@
-using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using System.Windows.Input;
-using Avalonia.Media.Imaging;
 using Pap.erNet.Models;
-using Pap.erNet.Utils;
 using ReactiveUI;
 
 namespace Pap.erNet.ViewModels;
@@ -49,13 +45,10 @@ public class WallpaperViewModel(Wallpaper wallpaper) : ViewModelBase
 
     public string ThumbnailSource => wallpaper.Thumbnail;
     public string ImageSource => wallpaper.Url;
+
+    public string Link => wallpaper.Link;
     public string ResolutionRatio => wallpaper.ResolutionRatio;
     public string Author => wallpaper.Author;
-
-    // public async Task LoadImage()
-    // {
-    //      ImageSource = await ImageHelper.LoadFromWeb((new Uri(wallpaper.Url)));
-    // }
 
     private static void ShellExec(string cmd, bool waitForExit = true)
     {

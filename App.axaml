@@ -18,8 +18,13 @@
              <TrayIcon Icon="/Assets/logo.ico"
                        ToolTipText="Pap.erNet0.0.1"
                        MacOSProperties.IsTemplateIcon="true"
-					   Clicked="TrayIcon_Clicked"
+					   Clicked="ShowOrHide"
                        >
+				 <TrayIcon.Menu>
+					 <NativeMenu>
+						 <NativeMenuItem Header="Exit" Click="Exit" />
+					 </NativeMenu>
+				 </TrayIcon.Menu>
              </TrayIcon>
         </TrayIcons>
     </TrayIcon.Icons>

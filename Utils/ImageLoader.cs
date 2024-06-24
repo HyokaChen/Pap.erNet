@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,7 +36,7 @@ public class ImageLoader
         var thumbnail = GetThumbnail(sender);
         if (thumbnail != null)
         {
-            var arr = Convert.FromBase64String(thumbnail.Replace("data:image/bmp;base64,", ""));
+            var arr = Convert.FromBase64String(thumbnail.Replace("data:image/webp;base64,", ""));
             using var ms = new MemoryStream(arr);
             sender.Source = new Bitmap(ms);
         }
@@ -75,6 +76,11 @@ public class ImageLoader
                     }
                     catch (TaskCanceledException)
                     {
+                        return null;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex.StackTrace);
                         return null;
                     }
                 },

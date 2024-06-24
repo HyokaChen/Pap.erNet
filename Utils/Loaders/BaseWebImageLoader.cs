@@ -78,9 +78,9 @@ public class BaseWebImageLoader : IAsyncImageLoader
             await SaveToGlobalCache(url, externalBytes).ConfigureAwait(false);
             return bitmap;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return null;
+            throw ex;
         }
     }
 
@@ -125,7 +125,8 @@ public class BaseWebImageLoader : IAsyncImageLoader
                 url,
                 e
             );
-            return Task.FromResult<Bitmap?>(null);
+            throw e;
+            //return Task.FromResult<Bitmap?>(null);
         }
     }
 
@@ -141,9 +142,10 @@ public class BaseWebImageLoader : IAsyncImageLoader
         {
             return await HttpClient.GetByteArrayAsync(url).ConfigureAwait(false);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return null;
+            throw ex;
+            //return null;
         }
     }
 

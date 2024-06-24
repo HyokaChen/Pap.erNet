@@ -1,5 +1,5 @@
 ﻿using System.Reactive.Concurrency;
-using System.Windows.Input;
+using System.Threading.Tasks;
 using ReactiveUI;
 
 namespace Pap.erNet.ViewModels;
@@ -13,7 +13,7 @@ public class MainWindowViewModel : ViewModelBase
 
     private void FirstLoadImages()
     {
-        WallpaperListViewModel.LoadWallpapers();
+        Task.Run(WallpaperListViewModel.LoadWallpapersAsync);
     }
 
     public WallpaperListViewModel WallpaperListViewModel { get; set; } = new();

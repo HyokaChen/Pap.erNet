@@ -9,13 +9,19 @@
              xmlns:item="using:Pap.erNet.Pages.Home"
              Background="Transparent"
              >
-    <ItemsControl Height="532"
+    <ItemsControl x:Name="WallpaperListIC" Height="532" 
                   ItemsSource="{Binding WallpaperListItems}">
+		<ItemsControl.ItemsPanel>
+			<ItemsPanelTemplate>
+				<VirtualizingStackPanel />
+			</ItemsPanelTemplate>
+		</ItemsControl.ItemsPanel>
         <ItemsControl.Template>
             <ControlTemplate TargetType="ItemsControl">
                 <ScrollViewer x:Name="ScrollViewer" Padding="{TemplateBinding Padding}"
                               HorizontalScrollBarVisibility="Hidden"
-                              VerticalScrollBarVisibility="Hidden">
+							  ScrollChanged="ScrollViewer_ScrollChanged"
+                              VerticalScrollBarVisibility="Auto">
                     <ItemsPresenter />
                 </ScrollViewer>
             </ControlTemplate>
