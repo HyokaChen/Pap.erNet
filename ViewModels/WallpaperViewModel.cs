@@ -8,14 +8,6 @@ namespace Pap.erNet.ViewModels;
 
 public class WallpaperViewModel(Wallpaper wallpaper) : ViewModelBase
 {
-    // private Bitmap? _imageSource;
-    //
-    // public Bitmap? ImageSource
-    // {
-    //     get => _imageSource;
-    //     set => this.RaiseAndSetIfChanged(ref _imageSource, value);
-    // }
-
     public ICommand VisitBrowserCommand { get; } =
         ReactiveCommand.Create(
             (string url) =>
@@ -45,6 +37,7 @@ public class WallpaperViewModel(Wallpaper wallpaper) : ViewModelBase
 
     public string ThumbnailSource => wallpaper.Thumbnail;
     public string ImageSource => wallpaper.Url;
+    public string Id => wallpaper.Id;
 
     public string Link => wallpaper.Link;
     public string ResolutionRatio => wallpaper.ResolutionRatio;

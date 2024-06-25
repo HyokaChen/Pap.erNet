@@ -27,7 +27,7 @@ public class ImageLoader
         SourceProperty.Changed.AddClassHandler<Image>(OnSourceChanged);
     }
 
-    public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
+    public static IAsyncImageLoader AsyncImageLoader { get; set; } = new DiskCachedWebImageLoader();
 
     private static ConcurrentDictionary<Image, CancellationTokenSource> _pendingOperations = new();
 

@@ -1,16 +1,28 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
-using System.Runtime.InteropServices;
+using Pap.erNet.Utils;
+using Pap.erNet.Utils.Loaders;
+using Pap.erNet.ViewModels;
 
 namespace Pap.erNet.Pages.Home;
 
 public partial class WallpaperView : UserControl
 {
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
-    private static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+    private static extern int SystemParametersInfo(
+        int uAction,
+        int uParam,
+        string lpvParam,
+        int fuWinIni
+    );
+
     private const int SPI_SETDESKWALLPAPER = 20;
     private const int SPIF_UPDATEINIFILE = 0x1;
-
 
     public WallpaperView()
     {
@@ -41,9 +53,25 @@ public partial class WallpaperView : UserControl
         SetDeskWallpaper.Opacity = 0.5;
     }
 
-    private void SetDeskWallpaper_PointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    private async void SetDeskWallpaper_PointerPressed(
+        object? sender,
+        Avalonia.Input.PointerPressedEventArgs e
+    )
     {
-        // TODO: set window wallpaper
-        _ = SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, "", SPIF_UPDATEINIFILE);
+        // TODO: set window wallpaper with show progress bar
+        var vm = this.DataContext as WallpaperViewModel;
+        var bitmap = await Task.Run(
+                async () =>
+                    await ImageLoader.AsyncImageLoader.ProvideImageAsync(
+                        vm.ImageSource.Replace("/thumb", "/full")
+                    )
+            )
+            .ConfigureAwait(true);
+        var path = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+            $"{vm.Id}.jpg"
+        );
+        bitmap.Save(path);
+        _ = SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, path, SPIF_UPDATEINIFILE);
     }
 }

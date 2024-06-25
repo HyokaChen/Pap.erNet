@@ -1,11 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading.Tasks;
-using Blurhash;
 using Blurhash.ImageSharp;
 using GraphQL;
-using GraphQL.Client.Abstractions;
 using Pap.erNet.Models;
 using Pap.erNet.Utils;
 using SixLabors.ImageSharp;
@@ -82,7 +78,8 @@ public class WallpaperListService
             );
             yield return new Wallpaper()
             {
-                Url = entry.Urls.Thumb.Replace("/thumb", "/full"),
+                Id = entry.Id,
+                Url = entry.Urls.Thumb,
                 Link = entry.Link,
                 Author = entry.Heading,
                 Thumbnail = thumbnail,

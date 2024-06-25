@@ -2,14 +2,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="600"
+             mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="200"
              xmlns:vm="using:Pap.erNet.ViewModels"
              xmlns:asyncImageLoader="using:Pap.erNet.Utils"
              x:Class="Pap.erNet.Pages.Home.WallpaperView"
              x:DataType="vm:WallpaperViewModel"
              >
     <Panel PointerEntered="GotEnter" PointerExited="GotExit">
-        <Image Width="300" Height="200" Stretch="UniformToFill"
+        <Image Width="350" Height="200" Stretch="UniformToFill"
                asyncImageLoader:ImageLoader.Thumbnail="{Binding ThumbnailSource}"
                asyncImageLoader:ImageLoader.Source="{Binding ImageSource}"></Image>
         <Button x:Name="Author" IsVisible="False" FontSize="12" HorizontalAlignment="Center" Classes="hyperlink"
