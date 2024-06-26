@@ -78,11 +78,11 @@ public partial class WallpaperView : UserControl
             fullUrl,
             HttpCompletionOption.ResponseHeadersRead
         );
-        long? contentLen = response.Content.Headers.ContentLength;
-        long totalLen = contentLen ?? -1;
-        using var downloadFile = File.Create(filePath);
+        var contentLen = response.Content.Headers.ContentLength;
+        var totalLen = contentLen ?? -1;
+        await using var downloadFile = File.Create(filePath);
 
-        using var download = await response.Content.ReadAsStreamAsync();
+        await using var download = await response.Content.ReadAsStreamAsync();
         var buffer = new byte[10240];
 
         long totalBytesRead = 0;

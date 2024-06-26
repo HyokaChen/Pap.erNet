@@ -27,13 +27,13 @@ public class ImageLoader
         SourceProperty.Changed.AddClassHandler<Image>(OnSourceChanged);
     }
 
-    private static readonly string tempFolder = Path.Combine(
+    private static readonly string TempFolder = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "Temp"
     );
 
-    public static IAsyncImageLoader AsyncImageLoader { get; set; } =
-        new DiskCachedWebImageLoader(tempFolder);
+    private static IAsyncImageLoader AsyncImageLoader { get; set; } =
+        new DiskCachedWebImageLoader(TempFolder);
 
     private static ConcurrentDictionary<Image, CancellationTokenSource> _pendingOperations = new();
 
@@ -53,7 +53,7 @@ public class ImageLoader
         var cts = _pendingOperations.AddOrUpdate(
             sender,
             new CancellationTokenSource(),
-            (x, y) =>
+            (_, y) =>
             {
                 y.Cancel();
                 return new CancellationTokenSource();
@@ -95,7 +95,7 @@ public class ImageLoader
             .ConfigureAwait(true);
 
         if (bitmap != null && !cts.Token.IsCancellationRequested)
-            sender.Source = bitmap!;
+            sender.Source = bitmap;
 
         // "It is not guaranteed to be thread safe by ICollection, but ConcurrentDictionary's implementation is. Additionally, we recently exposed this API for .NET 5 as a public ConcurrentDictionary.TryRemove"
         _pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
