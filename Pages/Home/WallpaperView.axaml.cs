@@ -1,12 +1,12 @@
 using System;
-using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
 using Pap.erNet.Utils;
-using Pap.erNet.Utils.Loaders;
 using Pap.erNet.ViewModels;
 
 namespace Pap.erNet.Pages.Home;
@@ -43,35 +43,60 @@ public partial class WallpaperView : UserControl
         SetDeskWallpaper.IsVisible = false;
     }
 
-    private void SetDeskWallpaper_PointerEntered(object? sender, Avalonia.Input.PointerEventArgs e)
+    private void SetDeskWallpaper_PointerEntered(object? sender, PointerEventArgs e)
     {
         SetDeskWallpaper.Opacity = 0.8;
     }
 
-    private void SetDeskWallpaper_PointerExited(object? sender, Avalonia.Input.PointerEventArgs e)
+    private void SetDeskWallpaper_PointerExited(object? sender, PointerEventArgs e)
     {
         SetDeskWallpaper.Opacity = 0.5;
     }
 
-    private async void SetDeskWallpaper_PointerPressed(
-        object? sender,
-        Avalonia.Input.PointerPressedEventArgs e
-    )
+    private async void SetDeskWallpaper_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         // TODO: set window wallpaper with show progress bar
+        DownloadPB.IsVisible = true;
         var vm = this.DataContext as WallpaperViewModel;
-        var bitmap = await Task.Run(
-                async () =>
-                    await ImageLoader.AsyncImageLoader.ProvideImageAsync(
-                        vm.ImageSource.Replace("/thumb", "/full")
-                    )
-            )
-            .ConfigureAwait(true);
-        var path = Path.Combine(
+        var fileName = vm.ImageSource.Split("/")[^2];
+        var filePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
-            $"{vm.Id}.jpg"
+            fileName
         );
-        bitmap.Save(path);
-        _ = SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, path, SPIF_UPDATEINIFILE);
+        if (!File.Exists(filePath))
+        {
+            var fullUrl = vm.ImageSource.Replace("/thumb", "/full");
+            await DownloadAsync(fullUrl, filePath);
+        }
+        DownloadPB.IsVisible = false;
+        _ = SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, filePath, SPIF_UPDATEINIFILE);
+    }
+
+    private async Task DownloadAsync(string fullUrl, string filePath)
+    {
+        using var response = await RequestUtil.HttpClient.GetAsync(
+            fullUrl,
+            HttpCompletionOption.ResponseHeadersRead
+        );
+        long? contentLen = response.Content.Headers.ContentLength;
+        long totalLen = contentLen ?? -1;
+        using var downloadFile = File.Create(filePath);
+
+        using var download = await response.Content.ReadAsStreamAsync();
+        var buffer = new byte[10240];
+
+        long totalBytesRead = 0;
+
+        int bytesRead;
+
+        while ((bytesRead = await download.ReadAsync(buffer).ConfigureAwait(false)) != 0)
+        {
+            await downloadFile.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
+            totalBytesRead += bytesRead;
+            Dispatcher.UIThread.Invoke(() =>
+            {
+                DownloadPB.Value = totalBytesRead * 1.0 / totalLen * 100;
+            });
+        }
     }
 }

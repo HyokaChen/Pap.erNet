@@ -13,7 +13,7 @@
                   ItemsSource="{Binding WallpaperListItems}" >
 		<ItemsControl.ItemsPanel>
 			<ItemsPanelTemplate>
-				<VirtualizingStackPanel />
+				<VirtualizingStackPanel Orientation="Vertical"/>
 			</ItemsPanelTemplate>
 		</ItemsControl.ItemsPanel>
         <ItemsControl.Template>

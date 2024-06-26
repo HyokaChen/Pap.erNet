@@ -47,7 +47,7 @@ public class WallpaperListService
     {
         var photosQueryRequest = new GraphQLRequest
         {
-            Query = GraphQLUtil.GraphQLQuery,
+            Query = RequestUtil.GraphQLQuery,
             OperationName = "Photos",
             Variables = new
             {
@@ -57,7 +57,7 @@ public class WallpaperListService
                 filters = new { }
             }
         };
-        var graphQLResponse = await GraphQLUtil.GraphQLClient.SendQueryAsync<ResponseType>(
+        var graphQLResponse = await RequestUtil.GraphQLClient.SendQueryAsync<ResponseType>(
             photosQueryRequest
         );
         var after = graphQLResponse.Data.Photos.After;

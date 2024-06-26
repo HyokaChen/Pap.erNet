@@ -60,5 +60,11 @@
                 Foreground="Aquamarine" HorizontalAlignment="Center" 
                        VerticalAlignment="Center" Text="{Binding ResolutionRatio}"></TextBlock>
         </Border>
+		<ProgressBar x:Name="DownloadPB"  Height="4"
+					  VerticalAlignment="Bottom"
+					  Foreground="White"
+					  Opacity="0.6"
+					  IsVisible="False"
+					  Minimum="0" Maximum="100" Value="0"/>
     </Panel>
 </UserControl>

@@ -1,10 +1,11 @@
-﻿using GraphQL;
+﻿using System.Net.Http;
+using GraphQL;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.SystemTextJson;
 
 namespace Pap.erNet.Utils
 {
-    public static class GraphQLUtil
+    public static class RequestUtil
     {
         public static GraphQLHttpClient GraphQLClient { get; set; } =
             new("https://paper.nsns.in/graphql", new SystemTextJsonSerializer());
@@ -37,5 +38,6 @@ namespace Pap.erNet.Utils
                   }
                 }
                 """;
+        public static HttpClient HttpClient { get; set; } = new();
     }
 }

@@ -27,7 +27,13 @@ public class ImageLoader
         SourceProperty.Changed.AddClassHandler<Image>(OnSourceChanged);
     }
 
-    public static IAsyncImageLoader AsyncImageLoader { get; set; } = new DiskCachedWebImageLoader();
+    private static readonly string tempFolder = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Temp"
+    );
+
+    public static IAsyncImageLoader AsyncImageLoader { get; set; } =
+        new DiskCachedWebImageLoader(tempFolder);
 
     private static ConcurrentDictionary<Image, CancellationTokenSource> _pendingOperations = new();
 
