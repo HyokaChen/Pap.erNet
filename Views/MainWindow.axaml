@@ -1,10 +1,10 @@
 <Window xmlns="https://github.com/avaloniaui"
                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                   xmlns:vm="using:Pap.erNet.ViewModels"
                    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                    mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="700"
                    x:Class="Pap.erNet.Views.MainWindow"
+		           xmlns:vm="using:Pap.erNet.ViewModels"
                    x:DataType="vm:MainWindowViewModel"
                    xmlns:home="clr-namespace:Pap.erNet.Pages.Home"
                    Icon="/Assets/avalonia-logo.ico"
@@ -39,18 +39,22 @@
                     HorizontalAlignment="Center"
         >
             <TabControl Margin="0 16 0 0"
-                        Padding="0" SelectionChanged="TabChange"
+						SelectedIndex="0" 
+                        Padding="0"
+						SelectionChanged="TabChange"
+						ItemsSource="{Binding WallpaperListViewModels}"
+						DisplayMemberBinding="{Binding Header, x:DataType=vm:HeaderWithWallpaperListViewModel}"
                         >
                 <TabControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel HorizontalAlignment="Center" Orientation="Horizontal"></StackPanel>
                     </ItemsPanelTemplate>
                 </TabControl.ItemsPanel>
-                <TabItem Header="发现">
-                    <home:WallpaperList DataContext="{Binding WallpaperListViewModel}"></home:WallpaperList>
-                </TabItem>
-                <TabItem Header="最热" ></TabItem>
-                <TabItem Header="竖屏" ></TabItem>
+				<TabControl.DataTemplates>
+					<DataTemplate x:DataType="vm:HeaderWithWallpaperListViewModel">
+						<home:WallpaperList DataContext="{Binding WallpaperListViewModel}"></home:WallpaperList>
+					</DataTemplate>
+				</TabControl.DataTemplates>
             </TabControl>
         </StackPanel>
     </Panel>

@@ -8,15 +8,45 @@ public class WallpaperListViewModel : ViewModelBase
 {
     private readonly WallpaperListService _service = new();
 
-    public async Task LoadWallpapersAsync()
+    public void LoadDiscoverWallpapersAsync()
     {
-        // TODO: use next to load 10 items/per
-        WallpaperListItems.Clear();
-        await foreach (var wallpaper in _service.DiscoverItemsAsync())
+        Task.Run(async () =>
         {
-            var wallpaperViewModel = new WallpaperViewModel(wallpaper);
-            WallpaperListItems.Add(wallpaperViewModel);
-        }
+            WallpaperListItems.Clear();
+            await foreach (var wallpaper in _service.DiscoverItemsAsync().ConfigureAwait(false))
+            {
+                var wallpaperViewModel = new WallpaperViewModel(wallpaper);
+                WallpaperListItems.Add(wallpaperViewModel);
+            }
+        });
+    }
+
+    public void LoadLatestWallpapersAsync()
+    {
+        Task.Run(async () =>
+        {
+            WallpaperListItems.Clear();
+            await foreach (var wallpaper in _service.LatestItemsAsync().ConfigureAwait(false))
+            {
+                var wallpaperViewModel = new WallpaperViewModel(wallpaper);
+                WallpaperListItems.Add(wallpaperViewModel);
+            }
+        });
+    }
+
+    public void LoadVerticalScreenWallpapersAsync()
+    {
+        Task.Run(async () =>
+        {
+            WallpaperListItems.Clear();
+            await foreach (
+                var wallpaper in _service.VerticalScreenItemsAsync().ConfigureAwait(false)
+            )
+            {
+                var wallpaperViewModel = new WallpaperViewModel(wallpaper);
+                WallpaperListItems.Add(wallpaperViewModel);
+            }
+        });
     }
 
     public ObservableCollection<WallpaperViewModel> WallpaperListItems { get; set; } = [];
