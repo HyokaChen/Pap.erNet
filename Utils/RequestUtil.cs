@@ -38,6 +38,5 @@ namespace Pap.erNet.Utils
                   }
                 }
                 """;
-        public static HttpClient HttpClient { get; set; } = new();
     }
 }

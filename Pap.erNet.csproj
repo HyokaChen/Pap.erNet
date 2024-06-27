@@ -18,6 +18,12 @@
     <ItemGroup>
         <AvaloniaResource Include="Assets\**" />
         <Folder Include="Pages\Settings\" />
+        <Folder Remove="README\" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <None Remove="zanshangma.jpg" />
     </ItemGroup>
 
     <ItemGroup>

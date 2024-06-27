@@ -14,11 +14,8 @@ public class RamCachedWebImageLoader : BaseWebImageLoader
     private readonly ConcurrentDictionary<string, Task<Bitmap?>> _memoryCache = new();
 
     /// <inheritdoc />
-    public RamCachedWebImageLoader() { }
-
-    /// <inheritdoc />
-    public RamCachedWebImageLoader(HttpClient httpClient, bool disposeHttpClient)
-        : base(httpClient, disposeHttpClient) { }
+    public RamCachedWebImageLoader()
+        : base() { }
 
     /// <inheritdoc />
     public override async Task<Bitmap?> ProvideImageAsync(string url)

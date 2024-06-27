@@ -26,7 +26,7 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader
         bool disposeHttpClient,
         string cacheFolder = "Cache/Images/"
     )
-        : base(httpClient, disposeHttpClient)
+        : base()
     {
         _cacheFolder = cacheFolder;
     }

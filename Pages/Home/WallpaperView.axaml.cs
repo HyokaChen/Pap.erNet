@@ -1,6 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.Http;
+using System.Net.Security;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -74,7 +77,28 @@ public partial class WallpaperView : UserControl
 
     private async Task DownloadAsync(string fullUrl, string filePath)
     {
-        using var response = await RequestUtil.HttpClient.GetAsync(
+        var client = new HttpClient(
+            new SocketsHttpHandler()
+            {
+                UseProxy = false,
+                MaxConnectionsPerServer = 5,
+                AllowAutoRedirect = false,
+                SslOptions = new SslClientAuthenticationOptions()
+                {
+                    RemoteCertificateValidationCallback = (
+                        sender,
+                        certificate,
+                        chain,
+                        sslPolicyErrors
+                    ) => true
+                }
+            }
+        )
+        {
+            Timeout = TimeSpan.FromSeconds(300),
+        };
+        Debug.WriteLine($"Download Url::{fullUrl}");
+        using var response = await client.GetAsync(
             fullUrl,
             HttpCompletionOption.ResponseHeadersRead
         );

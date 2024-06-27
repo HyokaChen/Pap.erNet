@@ -1,6 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.Http;
+using System.Net.Security;
 using System.Threading.Tasks;
 using Avalonia.Logging;
 using Avalonia.Media.Imaging;
@@ -15,13 +18,6 @@ namespace Pap.erNet.Utils.Loaders;
 public class BaseWebImageLoader : IAsyncImageLoader
 {
     private readonly ParametrizedLogger? _logger;
-    private readonly bool _shouldDisposeHttpClient;
-
-    /// <summary>
-    ///     Initializes a new instance with new <see cref="HttpClient" /> instance
-    /// </summary>
-    public BaseWebImageLoader()
-        : this(new HttpClient(), true) { }
 
     /// <summary>
     ///     Initializes a new instance with the provided <see cref="HttpClient" />, and specifies whether that
@@ -32,14 +28,10 @@ public class BaseWebImageLoader : IAsyncImageLoader
     ///     true if the inner handler should be disposed of by Dispose; false if you intend to
     ///     reuse the HttpClient.
     /// </param>
-    public BaseWebImageLoader(HttpClient httpClient, bool disposeHttpClient)
+    public BaseWebImageLoader()
     {
-        HttpClient = httpClient;
-        _shouldDisposeHttpClient = disposeHttpClient;
         _logger = Logger.TryGet(LogEventLevel.Information, ImageLoader.AsyncImageLoaderLogArea);
     }
-
-    protected HttpClient HttpClient { get; }
 
     /// <inheritdoc />
     public virtual async Task<Bitmap?> ProvideImageAsync(string url)
@@ -49,7 +41,6 @@ public class BaseWebImageLoader : IAsyncImageLoader
 
     public void Dispose()
     {
-        Dispose(true);
         GC.SuppressFinalize(this);
     }
 
@@ -80,6 +71,7 @@ public class BaseWebImageLoader : IAsyncImageLoader
         }
         catch (Exception ex)
         {
+            Debug.WriteLine($"Request Error::{ex.Message}");
             throw ex;
         }
     }
@@ -140,12 +132,32 @@ public class BaseWebImageLoader : IAsyncImageLoader
     {
         try
         {
-            return await HttpClient.GetByteArrayAsync(url).ConfigureAwait(false);
+            Debug.WriteLine($"Thumb Url::{url}");
+            var client = new HttpClient(
+                new SocketsHttpHandler()
+                {
+                    UseProxy = false,
+                    MaxConnectionsPerServer = 10,
+                    AllowAutoRedirect = false,
+                    SslOptions = new SslClientAuthenticationOptions()
+                    {
+                        RemoteCertificateValidationCallback = (
+                            sender,
+                            certificate,
+                            chain,
+                            sslPolicyErrors
+                        ) => true
+                    },
+                }
+            )
+            {
+                Timeout = TimeSpan.FromSeconds(300),
+            };
+            return await client.GetByteArrayAsync(url).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             throw ex;
-            //return null;
         }
     }
 
@@ -170,16 +182,5 @@ public class BaseWebImageLoader : IAsyncImageLoader
     {
         // Current implementation does not provide global caching
         return Task.CompletedTask;
-    }
-
-    ~BaseWebImageLoader()
-    {
-        Dispose(false);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing && _shouldDisposeHttpClient)
-            HttpClient.Dispose();
     }
 }

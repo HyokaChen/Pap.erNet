@@ -10,10 +10,13 @@ cd Pap.erNet/
 
 ## 文档
 #### 发现
+![发现](README/Discover.png "发现")
 
 #### 最新
+![最新](README/Latest.jpg "最新")
 
 #### 竖屏
+![竖屏](README/VerticalScreen.jpg "竖屏")
 
 #### 我的壁纸
 
@@ -26,7 +29,7 @@ cd Pap.erNet/
 ## 其它
 如果觉得本项目不错，请点击页面右上角的的小星星。也可以为作者点👍，欢迎打赏。
 
-![赞赏码](zanshangma.jpg "赞赏码")
+![赞赏码](README/zanshangma.jpg "赞赏码")
 
 ## 感谢项目/产品
 

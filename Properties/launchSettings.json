@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Pap.erNet": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
