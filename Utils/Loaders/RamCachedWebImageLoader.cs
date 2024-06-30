@@ -11,20 +11,20 @@ namespace Pap.erNet.Utils.Loaders;
 /// </summary>
 public class RamCachedWebImageLoader : BaseWebImageLoader
 {
-    private readonly ConcurrentDictionary<string, Task<Bitmap?>> _memoryCache = new();
+	private readonly ConcurrentDictionary<string, Task<Bitmap?>> _memoryCache = new();
 
-    /// <inheritdoc />
-    public RamCachedWebImageLoader()
-        : base() { }
+	/// <inheritdoc />
+	public RamCachedWebImageLoader()
+		: base() { }
 
-    /// <inheritdoc />
-    public override async Task<Bitmap?> ProvideImageAsync(string url)
-    {
-        var bitmap = await _memoryCache.GetOrAdd(url, LoadAsync).ConfigureAwait(false);
-        // If load failed - remove from cache and return
-        // Next load attempt will try to load image again
-        if (bitmap == null)
-            _memoryCache.TryRemove(url, out _);
-        return bitmap;
-    }
+	/// <inheritdoc />
+	public override async Task<Bitmap?> ProvideImageAsync(string url)
+	{
+		var bitmap = await _memoryCache.GetOrAdd(url, LoadAsync).ConfigureAwait(false);
+		// If load failed - remove from cache and return
+		// Next load attempt will try to load image again
+		if (bitmap == null)
+			_memoryCache.TryRemove(url, out _);
+		return bitmap;
+	}
 }

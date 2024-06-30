@@ -44,6 +44,8 @@
         <PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="6.1.0" />
         <PackageReference Condition="$(DefineConstants.Contains(ENABLE_XAML_HOT_RELOAD))" Include="HotAvalonia" Version="1.1.1" />
         <PackageReference Include="HotAvalonia.Extensions" Version="1.1.1" PrivateAssets="All" />
+        <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
+        <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
     </ItemGroup>
 
     <ItemGroup>

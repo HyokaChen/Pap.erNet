@@ -14,59 +14,53 @@ namespace Pap.erNet.Utils.Loaders;
 /// </summary>
 public class DiskCachedWebImageLoader : RamCachedWebImageLoader
 {
-    private readonly string _cacheFolder;
+	private readonly string _cacheFolder;
 
-    public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/")
-    {
-        _cacheFolder = cacheFolder;
-    }
+	public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/")
+	{
+		_cacheFolder = cacheFolder;
+	}
 
-    public DiskCachedWebImageLoader(
-        HttpClient httpClient,
-        bool disposeHttpClient,
-        string cacheFolder = "Cache/Images/"
-    )
-        : base()
-    {
-        _cacheFolder = cacheFolder;
-    }
+	public DiskCachedWebImageLoader(HttpClient httpClient, bool disposeHttpClient, string cacheFolder = "Cache/Images/")
+		: base()
+	{
+		_cacheFolder = cacheFolder;
+	}
 
-    /// <inheritdoc />
-    protected override Task<Bitmap?> LoadFromGlobalCache(string url)
-    {
-        var path = Path.Combine(_cacheFolder, CreateMd5(url));
+	/// <inheritdoc />
+	protected override Task<Bitmap?> LoadFromGlobalCache(string url)
+	{
+		var path = Path.Combine(_cacheFolder, CreateMd5(url));
 
-        return File.Exists(path)
-            ? Task.FromResult<Bitmap?>(new Bitmap(path))
-            : Task.FromResult<Bitmap?>(null);
-    }
+		return File.Exists(path) ? Task.FromResult<Bitmap?>(new Bitmap(path)) : Task.FromResult<Bitmap?>(null);
+	}
 
 #if NETSTANDARD2_1
-    protected override async Task SaveToGlobalCache(string url, byte[] imageBytes)
-    {
-        var path = Path.Combine(_cacheFolder, CreateMD5(url));
+	protected override async Task SaveToGlobalCache(string url, byte[] imageBytes)
+	{
+		var path = Path.Combine(_cacheFolder, CreateMD5(url));
 
-        Directory.CreateDirectory(_cacheFolder);
-        await File.WriteAllBytesAsync(path, imageBytes).ConfigureAwait(false);
-    }
+		Directory.CreateDirectory(_cacheFolder);
+		await File.WriteAllBytesAsync(path, imageBytes).ConfigureAwait(false);
+	}
 #else
-    protected override Task SaveToGlobalCache(string url, byte[] imageBytes)
-    {
-        var path = Path.Combine(_cacheFolder, CreateMd5(url));
-        Directory.CreateDirectory(_cacheFolder);
-        File.WriteAllBytes(path, imageBytes);
-        return Task.CompletedTask;
-    }
+	protected override Task SaveToGlobalCache(string url, byte[] imageBytes)
+	{
+		var path = Path.Combine(_cacheFolder, CreateMd5(url));
+		Directory.CreateDirectory(_cacheFolder);
+		File.WriteAllBytes(path, imageBytes);
+		return Task.CompletedTask;
+	}
 #endif
 
-    private static string CreateMd5(string input)
-    {
-        // Use input string to calculate MD5 hash
-        using var md5 = MD5.Create();
-        var inputBytes = Encoding.ASCII.GetBytes(input);
-        var hashBytes = md5.ComputeHash(inputBytes);
+	private static string CreateMd5(string input)
+	{
+		// Use input string to calculate MD5 hash
+		using var md5 = MD5.Create();
+		var inputBytes = Encoding.ASCII.GetBytes(input);
+		var hashBytes = md5.ComputeHash(inputBytes);
 
-        // Convert the byte array to hexadecimal string
-        return BitConverter.ToString(hashBytes).Replace("-", "");
-    }
+		// Convert the byte array to hexadecimal string
+		return BitConverter.ToString(hashBytes).Replace("-", "");
+	}
 }

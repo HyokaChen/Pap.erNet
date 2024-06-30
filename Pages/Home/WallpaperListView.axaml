@@ -9,7 +9,7 @@
              xmlns:item="using:Pap.erNet.Pages.Home"
              Background="Transparent"
              >
-    <ItemsControl x:Name="WallpaperListIC" Height="682" 
+    <ItemsControl x:Name="WallpaperListIC" Height="600" 
                   ItemsSource="{Binding WallpaperListItems}" >
 		<ItemsControl.ItemsPanel>
 			<ItemsPanelTemplate>
@@ -22,6 +22,8 @@
                               HorizontalScrollBarVisibility="Hidden"
 							  IsScrollInertiaEnabled="True"
 							  IsScrollChainingEnabled="False"
+							  IsDeferredScrollingEnabled="True"
+							  ScrollChanged="ScrollViewer_ScrollChanged"
                               VerticalScrollBarVisibility="Hidden">
                     <ItemsPresenter />
                 </ScrollViewer>
