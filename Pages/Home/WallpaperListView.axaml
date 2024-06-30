@@ -20,7 +20,7 @@
             <ControlTemplate TargetType="ItemsControl">
                 <ScrollViewer Padding="{TemplateBinding Padding}"
                               HorizontalScrollBarVisibility="Hidden"
-							  IsScrollInertiaEnabled="True"
+							  IsScrollInertiaEnabled="False"
 							  IsScrollChainingEnabled="False"
 							  IsDeferredScrollingEnabled="True"
 							  ScrollChanged="ScrollViewer_ScrollChanged"

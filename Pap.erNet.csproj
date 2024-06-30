@@ -17,6 +17,10 @@
 
     <ItemGroup>
         <AvaloniaResource Include="Assets\**" />
+        <AvaloniaXaml Remove="README\**" />
+        <Compile Remove="README\**" />
+        <EmbeddedResource Remove="README\**" />
+        <None Remove="README\**" />
         <Folder Include="Pages\Settings\" />
         <Folder Remove="README\" />
     </ItemGroup>
@@ -46,6 +50,7 @@
         <PackageReference Include="HotAvalonia.Extensions" Version="1.1.1" PrivateAssets="All" />
         <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
         <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+        <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup>

@@ -28,6 +28,7 @@ public class WallpaperListService
 		var graphQLResponse = await RequestUtil.GraphQLClient.SendQueryAsync<ResponseType>(photosQueryRequest);
 		var after = graphQLResponse.Data.Photos.After;
 		var before = graphQLResponse.Data.Photos.Before;
+		Debug.WriteLine($"DiscoverItemsAsync 2244936390884196352, after:${after}, before: ${before}");
 		var entries = graphQLResponse.Data.Photos.Entries;
 		foreach (var entry in entries)
 		{
@@ -91,6 +92,7 @@ public class WallpaperListService
 		var graphQLResponse = await RequestUtil.GraphQLClient.SendQueryAsync<ResponseType>(photosQueryRequest);
 		var after = graphQLResponse.Data.Photos.After;
 		var before = graphQLResponse.Data.Photos.Before;
+		Debug.WriteLine($"LatestItemsAsync 2416408299759992832, after:${after}, before: ${before}");
 		var entries = graphQLResponse.Data.Photos.Entries;
 		foreach (var entry in entries)
 		{
@@ -131,6 +133,7 @@ public class WallpaperListService
 		var graphQLResponse = await RequestUtil.GraphQLClient.SendQueryAsync<ResponseType>(photosQueryRequest);
 		var after = graphQLResponse.Data.Photos.After;
 		var before = graphQLResponse.Data.Photos.Before;
+		Debug.WriteLine($"VerticalScreenItemsAsync 2245081321414066176, after:${after}, before: ${before}");
 		var entries = graphQLResponse.Data.Photos.Entries;
 		foreach (var entry in entries)
 		{

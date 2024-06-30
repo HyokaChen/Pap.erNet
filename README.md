@@ -13,10 +13,10 @@ cd Pap.erNet/
 ![发现](README/Discover.png "发现")
 
 #### 最新
-![最新](README/Latest.jpg "最新")
+![最新](README/Latest.png "最新")
 
 #### 竖屏
-![竖屏](README/VerticalScreen.jpg "竖屏")
+![竖屏](README/VerticalScreen.png "竖屏")
 
 #### 我的壁纸
 

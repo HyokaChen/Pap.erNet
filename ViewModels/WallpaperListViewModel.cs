@@ -1,10 +1,14 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
+using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 using System.Threading.Tasks;
-using Nito.AsyncEx;
 using Pap.erNet.Models;
 using Pap.erNet.Services;
+using ReactiveUI;
 
 namespace Pap.erNet.ViewModels;
 
@@ -16,13 +20,18 @@ public class WallpaperListViewModel : ViewModelBase
 
 	private const int NEXT_BATCH = 10;
 
+	public WallpaperListViewModel()
+	{
+		RxApp.TaskpoolScheduler.Schedule(SubscribeLoadStatus);
+	}
+
 	public void LoadNextDiscoverWallpapersAsync()
 	{
 		Task.Run(async () =>
 		{
 			WallpaperListItems.Clear();
 			_wallpapersGenerator = _service.DiscoverItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
-			await InternalNext();
+			await InternalNext(true);
 		});
 	}
 
@@ -32,7 +41,7 @@ public class WallpaperListViewModel : ViewModelBase
 		{
 			WallpaperListItems.Clear();
 			_wallpapersGenerator = _service.LatestItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
-			await InternalNext();
+			await InternalNext(true);
 		});
 	}
 
@@ -42,7 +51,7 @@ public class WallpaperListViewModel : ViewModelBase
 		{
 			WallpaperListItems.Clear();
 			_wallpapersGenerator = _service.VerticalScreenItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
-			await InternalNext();
+			await InternalNext(true);
 		});
 	}
 
@@ -85,18 +94,15 @@ public class WallpaperListViewModel : ViewModelBase
 		});
 	}
 
-	public void LoadNextWallpapersAsync()
+	public void LoadNextWallpapersAsync(bool needInitLoadStatus = false)
 	{
-		Task.Run(InternalNext);
+		Task.Run(async () => await InternalNext(needInitLoadStatus));
 	}
 
-	private async Task InternalNext()
+	private async Task InternalNext(bool needInitLoadStatus)
 	{
 		using (await _mutex.LockAsync())
 		{
-			Debug.WriteLine($"获取互斥锁::::");
-			// TODO: need to change image source rather then append items,
-			//       because it not loadd 100 items when scroll
 			int i = 0;
 			while (_wallpapersGenerator.HasValue && i < NEXT_BATCH)
 			{
@@ -112,16 +118,64 @@ public class WallpaperListViewModel : ViewModelBase
 			}
 			Debug.WriteLine($"WallpaperListItems's count:::{WallpaperListItems.Count}");
 		}
+		if (needInitLoadStatus)
+		{
+			List<Task> tasks = new(10);
+
+			foreach (var idx in Enumerable.Range(0, 10))
+			{
+				tasks.Add(
+					Task.Run(async () =>
+					{
+						await LoadStatusChannel.Writer.WriteAsync(idx);
+					})
+				);
+			}
+			await Task.WhenAll([.. tasks]);
+		}
 	}
 
-    private void ChangeLoadStatus()
-    {
-        
-    }
+	public void LoadNextStatusAsync(int startIdx)
+	{
+		Task.Run(async () =>
+		{
+			Debug.WriteLine($"滚动塞了多少数据:({startIdx + 1}->{startIdx + 4})");
+			List<Task> tasks = new(4);
 
-    public ObservableCollection<WallpaperViewModel> WallpaperListItems { get; set; } = [];
+			foreach (var idx in Enumerable.Range(startIdx + 1, 4))
+			{
+				tasks.Add(
+					Task.Run(async () =>
+					{
+						await LoadStatusChannel.Writer.WriteAsync(idx);
+					})
+				);
+			}
+			await Task.WhenAll([.. tasks]);
+		});
+	}
 
-	private readonly AsyncLock _mutex = new();
+	private async void SubscribeLoadStatus()
+	{
+		var reader = LoadStatusChannel.Reader;
+		while (await reader.WaitToReadAsync())
+		{
+			if (reader.TryRead(out var itemIndex))
+			{
+				if (itemIndex < WallpaperListItems.Count)
+					WallpaperListItems[itemIndex].IsLoad = true;
+				else
+					Debug.WriteLine($"滚动太快了！{itemIndex}");
+			}
+		}
+	}
+
+	public ObservableCollection<WallpaperViewModel> WallpaperListItems { get; set; } = [];
+
+	private readonly Nito.AsyncEx.AsyncLock _mutex = new();
+
+	public Channel<int> LoadStatusChannel { get; init; } =
+		Channel.CreateBounded<int>(new BoundedChannelOptions(10) { FullMode = BoundedChannelFullMode.DropOldest });
 
 	~WallpaperListViewModel()
 	{

@@ -136,11 +136,19 @@ public class BaseWebImageLoader : IAsyncImageLoader
 					{
 						RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
 					},
+					AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
 				}
 			)
 			{
 				Timeout = TimeSpan.FromSeconds(300),
 			};
+			client.DefaultRequestHeaders.Add("Host", "c3.wuse.co");
+			client.DefaultRequestHeaders.Add("Accept-Language", "zh-CN,zh-Hans;q=0.9");
+			client.DefaultRequestHeaders.Add("Accept", "image/avif,image/webp;q=0.9,*/*");
+			client.DefaultRequestHeaders.Add(
+				"User-Agent",
+				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+			);
 			return await client.GetByteArrayAsync(url).ConfigureAwait(false);
 		}
 		catch (Exception ex)

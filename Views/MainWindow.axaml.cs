@@ -25,13 +25,13 @@ public partial class MainWindow : Window
 				switch (tabControl.SelectedIndex)
 				{
 					case 0:
-						mainWindowViewModel.WallpaperListViewModels[0].WallpaperListViewModel.LoadDiscoverWallpapersAsync();
+						mainWindowViewModel.WallpaperListViewModels[0].WallpaperListViewModel.LoadNextDiscoverWallpapersAsync();
 						break;
 					case 1:
-						mainWindowViewModel.WallpaperListViewModels[1].WallpaperListViewModel.LoadLatestWallpapersAsync();
+						mainWindowViewModel.WallpaperListViewModels[1].WallpaperListViewModel.LoadNextLatestWallpapersAsync();
 						break;
 					case 2:
-						mainWindowViewModel.WallpaperListViewModels[2].WallpaperListViewModel.LoadVerticalScreenWallpapersAsync();
+						mainWindowViewModel.WallpaperListViewModels[2].WallpaperListViewModel.LoadNextVerticalScreenWallpapersAsync();
 						break;
 					default:
 						break;
