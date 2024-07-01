@@ -39,4 +39,9 @@ cd Pap.erNet/
 ## 协议
 采用GPL-3.0 license
 
+## Star History
 
+[![Star History Chart](https://api.star-history.com/svg?repos=Pap.erNet/Pap.erNet&type=Date)](https://star-history.com/#Pap.erNet/Pap.erNet&Date)
+
+## 免责声明
+代码仅供交流学习使用，请勿用于非法用途和商业用途！如因此产生任何法律纠纷，均与作者无关！
