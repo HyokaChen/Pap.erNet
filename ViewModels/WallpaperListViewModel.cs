@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
@@ -15,6 +14,8 @@ namespace Pap.erNet.ViewModels;
 public class WallpaperListViewModel : ViewModelBase
 {
 	private readonly WallpaperListService _service = new();
+
+	private readonly IReadOnlyList<int> RUN_RANGE_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 	private ConfiguredCancelableAsyncEnumerable<Wallpaper>.Enumerator? _wallpapersGenerator;
 
@@ -122,7 +123,7 @@ public class WallpaperListViewModel : ViewModelBase
 		{
 			List<Task> tasks = new(10);
 
-			foreach (var idx in Enumerable.Range(0, 10))
+			foreach (var idx in RUN_RANGE_LIST)
 			{
 				tasks.Add(
 					Task.Run(async () =>
@@ -141,8 +142,7 @@ public class WallpaperListViewModel : ViewModelBase
 		{
 			Debug.WriteLine($"滚动塞了多少数据:({startIdx + 1}->{startIdx + 4})");
 			List<Task> tasks = new(4);
-
-			foreach (var idx in Enumerable.Range(startIdx + 1, 4))
+			for (int idx = startIdx + 1; idx < startIdx + 5; idx++)
 			{
 				tasks.Add(
 					Task.Run(async () =>

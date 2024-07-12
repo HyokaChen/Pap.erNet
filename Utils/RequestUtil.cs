@@ -1,5 +1,4 @@
-﻿using System.Net.Http;
-using GraphQL;
+﻿using System;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.SystemTextJson;
 
@@ -7,6 +6,7 @@ namespace Pap.erNet.Utils
 {
 	public static class RequestUtil
 	{
+		[Obsolete("This GraphQLClient is Obsolete.", false)]
 		public static GraphQLHttpClient GraphQLClient { get; set; } = new("https://paper.nsns.in/graphql", new SystemTextJsonSerializer());
 
 		public static string GraphQLQuery { get; set; } =

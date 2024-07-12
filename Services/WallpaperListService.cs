@@ -1,7 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net.Http;
 using Blurhash.ImageSharp;
 using GraphQL;
+using GraphQL.Client.Http;
+using GraphQL.Client.Serializer.SystemTextJson;
 using Pap.erNet.Models;
 using Pap.erNet.Utils;
 using SixLabors.ImageSharp;
@@ -13,7 +17,7 @@ public class WallpaperListService
 {
 	public async IAsyncEnumerable<Wallpaper> DiscoverItemsAsync()
 	{
-		var photosQueryRequest = new GraphQLRequest
+		var photosQueryRequest = new GraphQLHttpRequest
 		{
 			Query = RequestUtil.GraphQLQuery,
 			OperationName = "Photos",
@@ -25,7 +29,20 @@ public class WallpaperListService
 				filters = new { }
 			}
 		};
-		var graphQLResponse = await RequestUtil.GraphQLClient.SendQueryAsync<ResponseType>(photosQueryRequest);
+		var httpClient = new HttpClient() { Timeout = TimeSpan.FromSeconds(30) };
+		httpClient.DefaultRequestHeaders.Add("X-APOLLO-OPERATION-NAME", "Photos");
+		httpClient.DefaultRequestHeaders.Add("apollographql-client-name", "com.w.paper-apollo-ios");
+
+		var graphQLClient = new GraphQLHttpClient(
+			new GraphQLHttpClientOptions()
+			{
+				EndPoint = new Uri("https://paper.nsns.in/graphql"),
+				DefaultUserAgentRequestHeader = System.Net.Http.Headers.ProductInfoHeaderValue.Parse("pap.er/39")
+			},
+			new SystemTextJsonSerializer(),
+			httpClient!
+		);
+		var graphQLResponse = await graphQLClient.SendQueryAsync<ResponseType>(photosQueryRequest);
 		var after = graphQLResponse.Data.Photos.After;
 		var before = graphQLResponse.Data.Photos.Before;
 		Debug.WriteLine($"DiscoverItemsAsync 2244936390884196352, after:${after}, before: ${before}");

@@ -9,6 +9,11 @@
         <CSharpier_Check>true</CSharpier_Check>
         <CSharpier_LogLevel>Information</CSharpier_LogLevel>
         <CSharpier_FrameworkVersion>net8.0</CSharpier_FrameworkVersion>
+		<!-- Reduce Build Resources -->
+		<!-- Supported languages https://learn.microsoft.com/en-us/dotnet/core/project-sdk/msbuild-props#satelliteresourcelanguages -->
+		<SatelliteResourceLanguages>zh;en</SatelliteResourceLanguages>
+		<!-- Supported runtimes (https://learn.microsoft.com/en-us/dotnet/core/rid-catalog) -->
+		<RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
         <DefineConstants>$(DefineConstants);ENABLE_XAML_HOT_RELOAD</DefineConstants>
@@ -31,14 +36,14 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="11.1.0-rc1" />
-        <PackageReference Include="Avalonia.Desktop" Version="11.1.0-rc1" />
-        <PackageReference Condition="$(DefineConstants.Contains(ENABLE_XAML_HOT_RELOAD))" Include="Avalonia.Markup.Xaml.Loader" Version="11.1.0-rc1" />
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.0-rc1" />
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.0-rc1" />
+        <PackageReference Include="Avalonia" Version="11.1.0-rc2" />
+        <PackageReference Include="Avalonia.Desktop" Version="11.1.0-rc2" />
+        <PackageReference Condition="$(DefineConstants.Contains(ENABLE_XAML_HOT_RELOAD))" Include="Avalonia.Markup.Xaml.Loader" Version="11.1.0-rc2" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.0-rc2" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.0-rc2" />
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.1.0-rc1" />
-        <PackageReference Include="Avalonia.ReactiveUI" Version="11.1.0-rc1" />
+        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.1.0-rc2" />
+        <PackageReference Include="Avalonia.ReactiveUI" Version="11.1.0-rc2" />
         <PackageReference Include="Blurhash.ImageSharp" Version="3.0.0" />
         <PackageReference Include="CSharpier.MsBuild" Version="0.28.2">
           <PrivateAssets>all</PrivateAssets>
@@ -50,7 +55,7 @@
         <PackageReference Include="HotAvalonia.Extensions" Version="1.1.1" PrivateAssets="All" />
         <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
         <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
-        <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
+        <PackageReference Include="System.Threading.Channels" Version="9.0.0-preview.6.24327.7" />
     </ItemGroup>
 
     <ItemGroup>
