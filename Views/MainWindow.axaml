@@ -7,7 +7,7 @@
 		           xmlns:vm="using:Pap.erNet.ViewModels"
                    x:DataType="vm:MainWindowViewModel"
                    xmlns:home="clr-namespace:Pap.erNet.Pages.Home"
-                   Icon="/Assets/avalonia-logo.ico"
+                   Icon="/Assets/logo.ico"
                    Title="Pap.erNet"
                    TransparencyLevelHint="AcrylicBlur"
                    Background="Transparent"

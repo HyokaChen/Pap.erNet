@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Pap.erNet.Models;
 
@@ -17,11 +18,17 @@ public class Wallpaper
 
 public class ResponseType
 {
+	public required Data Data { get; set; }
+}
+
+public class Data
+{
 	public required Photos Photos { get; set; }
 }
 
 public class Photos
 {
+	[JsonPropertyName("__typename")]
 	public required string __Typename { get; set; }
 	public string? After { get; set; }
 	public string? Before { get; set; }
@@ -32,7 +39,10 @@ public class Photos
 
 public class Entry
 {
+	[JsonPropertyName("__typename")]
 	public required string __Typename { get; set; }
+
+	[JsonPropertyName("blurHash")]
 	public required string Blurhash { get; set; }
 	public required string Color { get; set; }
 	public required string Creator { get; set; }
@@ -51,6 +61,7 @@ public class Entry
 
 public class PhotoUrl
 {
+	[JsonPropertyName("__typename")]
 	public required string __Typename { get; set; }
 	public required string Thumb { get; set; }
 }

@@ -22,7 +22,7 @@
                        >
 				 <TrayIcon.Menu>
 					 <NativeMenu>
-						 <NativeMenuItem Header="Exit" Click="Exit" />
+						 <NativeMenuItem Header="退出" Click="Exit" />
 					 </NativeMenu>
 				 </TrayIcon.Menu>
              </TrayIcon>
