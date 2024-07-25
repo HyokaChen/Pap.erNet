@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Microsoft.Extensions.DependencyInjection;
 using Pap.erNet.ViewModels;
 
 namespace Pap.erNet.Views;
@@ -8,6 +9,8 @@ public partial class MainWindow : Window
 	public MainWindow()
 	{
 		InitializeComponent();
+		this.ShowInTaskbar = false;
+		this.DataContext = App.Current?.ServicesProvider.GetRequiredService<MainWindowViewModel>();
 	}
 
 	private void Window_Closing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)

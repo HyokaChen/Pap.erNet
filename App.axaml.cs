@@ -1,8 +1,9 @@
-using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using HotAvalonia;
+using Microsoft.Extensions.DependencyInjection;
+using Pap.erNet.Pages.Home;
 using Pap.erNet.ViewModels;
 using Pap.erNet.Views;
 
@@ -10,6 +11,21 @@ namespace Pap.erNet;
 
 public partial class App : Application
 {
+	/// <summary>
+	/// Gets the current <see cref="App"/> instance in use
+	/// </summary>
+	public static new App? Current => Application.Current as App;
+
+	/// <summary>
+	/// Gets the <see cref="IServiceProvider"/> instance to resolve application services.
+	/// </summary>
+	public IServiceProvider ServicesProvider { get; }
+
+	public App()
+	{
+		ServicesProvider = ConfigureServices();
+	}
+
 	public override void Initialize()
 	{
 		this.EnableHotReload();
@@ -20,9 +36,7 @@ public partial class App : Application
 	{
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 		{
-			var vm = new MainWindowViewModel();
-			var mw = new MainWindow { DataContext = vm, ShowInTaskbar = false };
-			desktop.MainWindow = mw;
+			desktop.MainWindow = ServicesProvider.GetRequiredService<MainWindow>();
 		}
 
 		base.OnFrameworkInitializationCompleted();
@@ -41,6 +55,19 @@ public partial class App : Application
 				desktop.MainWindow.Show();
 			}
 		}
+	}
+
+	private static IServiceProvider ConfigureServices()
+	{
+		var services = new ServiceCollection();
+
+		services.AddSingleton<MainWindow>();
+		services.AddTransient<WallpaperView>();
+		services.AddTransient<WallpaperListView>();
+
+		services.AddTransient<MainWindowViewModel>();
+
+		return services.BuildServiceProvider();
 	}
 
 	private void Exit(object? sender, System.EventArgs e)

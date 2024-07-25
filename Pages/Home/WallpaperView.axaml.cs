@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Pap.erNet.Utils;
 using Pap.erNet.ViewModels;
 
 namespace Pap.erNet.Pages.Home;
@@ -67,42 +68,49 @@ public partial class WallpaperView : UserControl
 
 	private async Task DownloadAsync(string fullUrl, string filePath)
 	{
-		var client = new HttpClient(
-			new SocketsHttpHandler()
-			{
-				UseProxy = false,
-				MaxConnectionsPerServer = 5,
-				AllowAutoRedirect = false,
-				SslOptions = new SslClientAuthenticationOptions()
+		try
+		{
+			var client = new HttpClient(
+				new SocketsHttpHandler()
 				{
-					RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+					UseProxy = false,
+					MaxConnectionsPerServer = 5,
+					AllowAutoRedirect = false,
+					SslOptions = new SslClientAuthenticationOptions()
+					{
+						RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+					}
 				}
-			}
-		)
-		{
-			Timeout = TimeSpan.FromSeconds(300),
-		};
-		Debug.WriteLine($"Download Url::{fullUrl}");
-		using var response = await client.GetAsync(fullUrl, HttpCompletionOption.ResponseHeadersRead);
-		var contentLen = response.Content.Headers.ContentLength;
-		var totalLen = contentLen ?? -1;
-		await using var downloadFile = File.Create(filePath);
-
-		await using var download = await response.Content.ReadAsStreamAsync();
-		var buffer = new byte[10240];
-
-		long totalBytesRead = 0;
-
-		int bytesRead;
-
-		while ((bytesRead = await download.ReadAsync(buffer).ConfigureAwait(false)) != 0)
-		{
-			await downloadFile.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
-			totalBytesRead += bytesRead;
-			Dispatcher.UIThread.Invoke(() =>
+			)
 			{
-				DownloadPB.Value = totalBytesRead * 1.0 / totalLen * 100;
-			});
+				Timeout = TimeSpan.FromSeconds(300),
+			};
+			Debug.WriteLine($"Download Url::{fullUrl}");
+			using var response = await client.GetAsync(fullUrl, HttpCompletionOption.ResponseHeadersRead);
+			var contentLen = response.Content.Headers.ContentLength;
+			var totalLen = contentLen ?? -1;
+			await using var downloadFile = File.Create(filePath);
+
+			await using var download = await response.Content.ReadAsStreamAsync();
+			var buffer = new byte[10240];
+
+			long totalBytesRead = 0;
+
+			int bytesRead;
+
+			while ((bytesRead = await download.ReadAsync(buffer).ConfigureAwait(false)) != 0)
+			{
+				await downloadFile.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
+				totalBytesRead += bytesRead;
+				Dispatcher.UIThread.Invoke(() =>
+				{
+					DownloadPB.Value = totalBytesRead * 1.0 / totalLen * 100;
+				});
+			}
+		}
+		catch (Exception ex)
+		{
+			LogHelper.WriteLog($"�����쳣::{ex.Message}>>>{ex.StackTrace}");
 		}
 	}
 }

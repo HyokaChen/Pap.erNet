@@ -4,9 +4,9 @@ using Pap.erNet.ViewModels;
 
 namespace Pap.erNet.Pages.Home;
 
-public partial class WallpaperList : UserControl
+public partial class WallpaperListView : UserControl
 {
-	public WallpaperList()
+	public WallpaperListView()
 	{
 		InitializeComponent();
 	}

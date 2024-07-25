@@ -52,7 +52,7 @@
                 </TabControl.ItemsPanel>
 				<TabControl.DataTemplates>
 					<DataTemplate x:DataType="vm:HeaderWithWallpaperListViewModel">
-						<home:WallpaperList DataContext="{Binding WallpaperListViewModel}"></home:WallpaperList>
+						<home:WallpaperListView DataContext="{Binding WallpaperListViewModel}"></home:WallpaperListView>
 					</DataTemplate>
 				</TabControl.DataTemplates>
             </TabControl>
