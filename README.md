@@ -5,7 +5,8 @@
 ```bash
 git clone https://github.com/HyokaChen/Pap.erNet.git
 cd Pap.erNet/
-./build-win.bat 或者 ./build-linux.bat
+# 架构名称的选择性：x64 / x86 / arm64，注意：请在相关的操作系统下编译，不能跨平台编译
+./build-win.bat 架构名称 或者 ./build-linux.sh 架构名称 或者  ./build-mac.sh 架构名称
 ```
 
 ## 文档
