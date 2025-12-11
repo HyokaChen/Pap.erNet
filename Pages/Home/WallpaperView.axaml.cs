@@ -85,7 +85,10 @@ public partial class WallpaperView : UserControl
 			{
 				Timeout = TimeSpan.FromSeconds(300),
 			};
-			client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
+			client.DefaultRequestHeaders.Add(
+				"User-Agent",
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+			);
 			client.DefaultRequestHeaders.Add("Accept", "q=0.9,image/avif,image/webp,*/*");
 			client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
 			client.DefaultRequestHeaders.Add("Host", "c3.wuse.co");

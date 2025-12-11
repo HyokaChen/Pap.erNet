@@ -13,9 +13,11 @@ public partial class WallpaperListView : UserControl
 
 	private async void ScrollViewer_ScrollChanged(object? sender, ScrollChangedEventArgs e)
 	{
-		if (sender is not ScrollViewer scrollViewer) return;
-		if (DataContext is not WallpaperListViewModel vm) return;
-		
+		if (sender is not ScrollViewer scrollViewer)
+			return;
+		if (DataContext is not WallpaperListViewModel vm)
+			return;
+
 		var offset = scrollViewer.Offset.Length; // 偏移量
 		var total = scrollViewer.Extent.Height; // 可滚动内容范围
 		var winHeight = scrollViewer.DesiredSize.Height; // 窗体高度
