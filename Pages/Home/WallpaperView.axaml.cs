@@ -54,7 +54,7 @@ public partial class WallpaperView : UserControl
 	{
 		// TODO: set window wallpaper with show progress bar
 		DownloadPB.IsVisible = true;
-		var vm = this.DataContext as WallpaperViewModel;
+		var vm = DataContext as WallpaperViewModel;
 		var fileName = vm.ImageSource.Split("/")[^2];
 		var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), fileName);
 		if (!File.Exists(filePath))
@@ -75,16 +75,21 @@ public partial class WallpaperView : UserControl
 				{
 					UseProxy = false,
 					MaxConnectionsPerServer = 5,
-					AllowAutoRedirect = false,
+					AllowAutoRedirect = true,
 					SslOptions = new SslClientAuthenticationOptions()
 					{
-						RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
-					}
+						RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true,
+					},
 				}
 			)
 			{
 				Timeout = TimeSpan.FromSeconds(300),
 			};
+			client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
+			client.DefaultRequestHeaders.Add("Accept", "q=0.9,image/avif,image/webp,*/*");
+			client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
+			client.DefaultRequestHeaders.Add("Host", "c3.wuse.co");
+			client.DefaultRequestHeaders.Add("Accept-Language", "zh-CN,zh-Hans;q=0.9");
 			Debug.WriteLine($"Download Url::{fullUrl}");
 			using var response = await client.GetAsync(fullUrl, HttpCompletionOption.ResponseHeadersRead);
 			var contentLen = response.Content.Headers.ContentLength;
@@ -110,7 +115,7 @@ public partial class WallpaperView : UserControl
 		}
 		catch (Exception ex)
 		{
-			LogHelper.WriteLog($"�����쳣::{ex.Message}>>>{ex.StackTrace}");
+			LogHelper.WriteLog($"请求出现报错:{ex.Message}>>>{ex.StackTrace}");
 		}
 	}
 }

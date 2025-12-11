@@ -25,7 +25,7 @@ namespace Pap.erNet.Utils
 		/// <summary>
 		/// 结尾，放在最后
 		/// </summary>
-		End
+		End,
 	}
 
 	/// <summary>

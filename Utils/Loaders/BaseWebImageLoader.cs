@@ -134,7 +134,7 @@ public class BaseWebImageLoader : IAsyncImageLoader
 					AllowAutoRedirect = false,
 					SslOptions = new SslClientAuthenticationOptions()
 					{
-						RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+						RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true,
 					},
 					AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
 				}

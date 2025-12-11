@@ -11,9 +11,9 @@ public class HeaderWithWallpaperListViewModel : ViewModelBase
 public class MainWindowViewModel : ViewModelBase
 {
 	public ObservableCollection<HeaderWithWallpaperListViewModel> WallpaperListViewModels { get; set; } =
-		[
-			new HeaderWithWallpaperListViewModel() { Header = "发现", WallpaperListViewModel = new WallpaperListViewModel() },
-			new HeaderWithWallpaperListViewModel() { Header = "最新", WallpaperListViewModel = new WallpaperListViewModel() },
-			new HeaderWithWallpaperListViewModel() { Header = "竖屏", WallpaperListViewModel = new WallpaperListViewModel() },
-		];
+	[
+		new() { Header = "发现", WallpaperListViewModel = new WallpaperListViewModel() },
+		new() { Header = "最新", WallpaperListViewModel = new WallpaperListViewModel() },
+		new() { Header = "竖屏", WallpaperListViewModel = new WallpaperListViewModel() },
+	];
 }

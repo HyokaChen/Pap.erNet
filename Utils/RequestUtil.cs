@@ -46,25 +46,25 @@ namespace Pap.erNet.Utils
 		static RequestUtil()
 		{
 			PhotosHttpClient.DefaultRequestHeaders.Add("X-APOLLO-OPERATION-NAME", "Photos");
+			PhotosHttpClient.DefaultRequestHeaders.Add("X-APOLLO-OPERATION-TYPE", "query");
 			PhotosHttpClient.DefaultRequestHeaders.Add("apollographql-client-name", "com.w.paper-apollo-ios");
-			PhotosHttpClient.DefaultRequestHeaders.Add("User-Agent", "pap.er/39");
+			PhotosHttpClient.DefaultRequestHeaders.Add("User-Agent", "pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
 		}
 
 		public static async Task<ResponseType?> GetResponse(string listId)
 		{
 			try
 			{
-				var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 				var photosQueryRequest = new PhotosGraphQL
 				{
 					Query = GraphQLQuery,
 					OperationName = "Photos",
-					Variables = new()
+					Variables = new VariablesGraphQL
 					{
 						ListId = listId,
-						After = (string)null,
-						Before = (string)null,
-					}
+						After = null,
+						Before = null,
+					},
 				};
 				var jsonString = JsonSerializer.Serialize(photosQueryRequest!, GraphQLSourceGenerationContext.Default.PhotosGraphQL);
 				var postContent = new StringContent(jsonString, Encoding.UTF8, new MediaTypeHeaderValue("application/json"));

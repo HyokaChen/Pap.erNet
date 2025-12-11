@@ -31,11 +31,11 @@ public class WallpaperListService
 			var res = new Wallpaper()
 			{
 				Id = entry.Id,
-				Url = entry.Urls.Thumb,
+				Url = entry.Urls.Thumb.Replace("http://", "https://"),
 				Link = entry.Link,
 				Author = entry.Heading,
 				Thumbnail = thumbnail,
-				ResolutionRatio = ComputeResolutionRatio(entry.Width, entry.Height)
+				ResolutionRatio = ComputeResolutionRatio(entry.Width, entry.Height),
 			};
 			yield return res;
 		}
@@ -44,21 +44,21 @@ public class WallpaperListService
 	internal static string ComputeResolutionRatio(int width, int height)
 	{
 		var result = string.Empty;
-		if (width > 7680 && height > 4320)
+		switch (width)
 		{
-			result = "8K";
-		}
-		else if (width > 5120 && height > 2880)
-		{
-			result = "5K";
-		}
-		else if ((width > 4096 && height > 2160) || (width > 3840 && height > 2160))
-		{
-			result = "4K";
-		}
-		else if (width > 2560 && height > 1440)
-		{
-			result = "2K";
+			case > 7680 when height > 4320:
+				result = "8K";
+				break;
+			case > 5120 when height > 2880:
+				result = "5K";
+				break;
+			case > 4096 when height > 2160:
+			case > 3840 when height > 2160:
+				result = "4K";
+				break;
+			case > 2560 when height > 1440:
+				result = "2K";
+				break;
 		}
 		return result;
 	}
@@ -84,11 +84,11 @@ public class WallpaperListService
 			yield return new Wallpaper()
 			{
 				Id = entry.Id,
-				Url = entry.Urls.Thumb,
+				Url = entry.Urls.Thumb.Replace("http://", "https://"),
 				Link = entry.Link,
 				Author = entry.Heading,
 				Thumbnail = thumbnail,
-				ResolutionRatio = ComputeResolutionRatio(entry.Width, entry.Height)
+				ResolutionRatio = ComputeResolutionRatio(entry.Width, entry.Height),
 			};
 		}
 	}
@@ -114,11 +114,11 @@ public class WallpaperListService
 			yield return new Wallpaper()
 			{
 				Id = entry.Id,
-				Url = entry.Urls.Thumb,
+				Url = entry.Urls.Thumb.Replace("http://", "https://"),
 				Link = entry.Link,
 				Author = entry.Heading,
 				Thumbnail = thumbnail,
-				ResolutionRatio = ComputeResolutionRatio(entry.Width, entry.Height)
+				ResolutionRatio = ComputeResolutionRatio(entry.Width, entry.Height),
 			};
 		}
 	}

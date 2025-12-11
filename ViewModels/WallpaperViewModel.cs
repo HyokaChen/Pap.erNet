@@ -24,7 +24,7 @@ public class WallpaperViewModel(Wallpaper wallpaper) : ViewModelBase
 							FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? url : "open",
 							Arguments = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? $"{url}" : "",
 							CreateNoWindow = true,
-							UseShellExecute = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+							UseShellExecute = RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
 						}
 					);
 				}
@@ -58,7 +58,7 @@ public class WallpaperViewModel(Wallpaper wallpaper) : ViewModelBase
 				RedirectStandardOutput = true,
 				UseShellExecute = false,
 				CreateNoWindow = true,
-				WindowStyle = ProcessWindowStyle.Hidden
+				WindowStyle = ProcessWindowStyle.Hidden,
 			}
 		);
 		if (waitForExit)
