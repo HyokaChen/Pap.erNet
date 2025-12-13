@@ -140,7 +140,7 @@ public class WallpaperListViewModel : ViewModelBase
 		{
 			Debug.WriteLine($"滚动塞了多少数据:({startIdx + 1}->{startIdx + 4})");
 			List<Task> tasks = new(4);
-			for (int idx = startIdx + 1; idx < startIdx + 5; idx++)
+			for (var idx = startIdx + 1; idx < startIdx + 5; idx++)
 			{
 				tasks.Add(
 					Task.Run(async () =>

@@ -8,20 +8,20 @@ public partial class MainWindow : Window
 {
 	public MainWindow()
 	{
+		DataContext = App.Current?.ServicesProvider.GetRequiredService<MainWindowViewModel>();
+		ShowInTaskbar = false;
 		InitializeComponent();
-		this.ShowInTaskbar = false;
-		this.DataContext = App.Current?.ServicesProvider.GetRequiredService<MainWindowViewModel>();
 	}
 
-	private void Window_Closing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)
+	private void Window_Closing(object? sender, WindowClosingEventArgs e)
 	{
-		this.Hide();
+		Hide();
 		e.Cancel = true;
 	}
 
-	private void TabChange(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
+	private void TabChange(object? sender, SelectionChangedEventArgs e)
 	{
-		if (this.DataContext is MainWindowViewModel mainWindowViewModel)
+		if (DataContext is MainWindowViewModel mainWindowViewModel)
 		{
 			if (e.Source is TabControl tabControl)
 			{

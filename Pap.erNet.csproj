@@ -59,10 +59,6 @@
 		<PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.9" />
 		<PackageReference Include="Avalonia.ReactiveUI" Version="11.3.8" />
 		<PackageReference Include="Blurhash.ImageSharp" Version="4.0.0" />
-		<PackageReference Include="Costura.Fody" Version="6.0.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
 		<PackageReference Include="CSharpier.MsBuild" Version="1.2.1">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

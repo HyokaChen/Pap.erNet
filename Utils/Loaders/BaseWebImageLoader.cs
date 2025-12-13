@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Security;
 using System.Threading.Tasks;
 using Avalonia.Logging;
@@ -71,7 +72,7 @@ public class BaseWebImageLoader : IAsyncImageLoader
 		}
 		catch (Exception ex)
 		{
-			Debug.WriteLine($"Request Error::{ex.Message}");
+			LogHelper.WriteLogAsync($"Request Error::{ex.Message}");
 			throw ex;
 		}
 	}
@@ -123,38 +124,63 @@ public class BaseWebImageLoader : IAsyncImageLoader
 	/// <returns>Image bytes</returns>
 	protected virtual async Task<byte[]?> LoadDataFromExternalAsync(string url)
 	{
-		try
-		{
-			Debug.WriteLine($"Thumb Url::{url}");
-			var client = new HttpClient(
-				new SocketsHttpHandler()
-				{
-					UseProxy = false,
-					MaxConnectionsPerServer = 10,
-					AllowAutoRedirect = false,
-					SslOptions = new SslClientAuthenticationOptions()
-					{
-						RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true,
-					},
-					AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
-				}
-			)
+		LogHelper.WriteLogAsync($"Thumb Url::{url}");
+		var client = new HttpClient(
+			new SocketsHttpHandler()
 			{
-				Timeout = TimeSpan.FromSeconds(300),
-			};
-			client.DefaultRequestHeaders.Add("Host", "c3.wuse.co");
-			client.DefaultRequestHeaders.Add("Accept-Language", "zh-CN,zh-Hans;q=0.9");
-			client.DefaultRequestHeaders.Add("Accept", "image/avif,image/webp;q=0.9,*/*");
-			client.DefaultRequestHeaders.Add(
-				"User-Agent",
-				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-			);
-			return await client.GetByteArrayAsync(url).ConfigureAwait(false);
-		}
-		catch (Exception ex)
+				UseProxy = false,
+				MaxConnectionsPerServer = 5,
+				AllowAutoRedirect = true,
+				SslOptions = new SslClientAuthenticationOptions()
+				{
+					RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true,
+				},
+				AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
+			}
+		)
 		{
-			throw ex;
+			Timeout = TimeSpan.FromSeconds(300),
+		};
+		client.DefaultRequestHeaders.UserAgent.ParseAdd(
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+		);
+		client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/avif"));
+		client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/webp"));
+		// 添加带 q-value 的媒体类型
+		client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*") { Quality = 0.8 });
+		client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+		client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
+		client.DefaultRequestHeaders.Host = "c3.wuse.co";
+
+		var maxRetries = 3;
+		var initialDelay = 1000;
+		Exception? lastException = null;
+
+		for (var attempt = 0; attempt <= maxRetries; attempt++)
+		{
+			if (attempt > 0)
+			{
+				var delay = (int)(initialDelay * Math.Pow(2, attempt - 1));
+				await Task.Delay(delay);
+			}
+
+			try
+			{
+				// 每次循环都重新创建请求和内容
+				using var response = await client.GetAsync(url).ConfigureAwait(false);
+
+				if (response.IsSuccessStatusCode)
+				{
+					return await response.Content.ReadAsByteArrayAsync();
+				}
+			}
+			catch (HttpRequestException ex)
+			{
+				lastException = ex;
+				Console.WriteLine($"[POST重试] 第 {attempt} 次尝试失败: {ex.Message}");
+			}
 		}
+		throw new HttpRequestException($"POST请求所有 {maxRetries + 1} 次尝试均失败。", lastException);
 	}
 
 	/// <summary>

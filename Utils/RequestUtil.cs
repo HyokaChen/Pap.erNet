@@ -49,11 +49,11 @@ namespace Pap.erNet.Utils
 			PhotosHttpClient.DefaultRequestHeaders.Connection.Add("keep-alive");
 			PhotosHttpClient.DefaultRequestHeaders.Add("locale", "zh-Hans");
 			PhotosHttpClient.DefaultRequestHeaders.Add("version", "39.0");
-			PhotosHttpClient.DefaultRequestHeaders.Add("Content-Type", "application/json");
 			PhotosHttpClient.DefaultRequestHeaders.Add("apollographql-client-version", "5.3.0-39");
 			PhotosHttpClient.DefaultRequestHeaders.Add("X-APOLLO-OPERATION-NAME", "Photos");
 			PhotosHttpClient.DefaultRequestHeaders.Add("X-APOLLO-OPERATION-TYPE", "query");
 			PhotosHttpClient.DefaultRequestHeaders.Add("apollographql-client-name", "com.w.paper-apollo-ios");
+			// PhotosHttpClient.DefaultRequestHeaders.Add("User-Agent", "pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
 			PhotosHttpClient.DefaultRequestHeaders.UserAgent.ParseAdd("pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
 		}
 
@@ -80,7 +80,7 @@ namespace Pap.erNet.Utils
 			}
 			catch (Exception ex)
 			{
-				Debug.WriteLine(ex);
+				LogHelper.WriteLogAsync(ex.StackTrace);
 				throw ex;
 			}
 		}

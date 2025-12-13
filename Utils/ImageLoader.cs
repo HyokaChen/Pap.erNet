@@ -43,7 +43,7 @@ public class ImageLoader
 		"Temp"
 	);
 
-	private static DiskCachedWebImageLoader AsyncImageLoader { get; set; } = new DiskCachedWebImageLoader(TempFolder);
+	private static DiskCachedWebImageLoader AsyncImageLoader { get; set; } = new(TempFolder);
 
 	private static ConcurrentDictionary<Image, CancellationTokenSource> _pendingOperations = new();
 
@@ -86,7 +86,7 @@ public class ImageLoader
 					}
 					catch (Exception ex)
 					{
-						Debug.WriteLine(ex.StackTrace);
+						LogHelper.WriteLogAsync(ex.StackTrace);
 						return null;
 					}
 				},

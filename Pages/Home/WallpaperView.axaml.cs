@@ -92,7 +92,7 @@ public partial class WallpaperView : UserControl
 			client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 			client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
 			client.DefaultRequestHeaders.Host = "c3.wuse.co";
-			Debug.WriteLine($"Download Url::{fullUrl}");
+			LogHelper.WriteLogAsync($"Download Url::{fullUrl}");
 			using var response = await client.GetAsync(fullUrl, HttpCompletionOption.ResponseHeadersRead);
 			var contentLen = response.Content.Headers.ContentLength;
 			var totalLen = contentLen ?? -1;
@@ -117,7 +117,7 @@ public partial class WallpaperView : UserControl
 		}
 		catch (Exception ex)
 		{
-			LogHelper.WriteLog($"请求出现报错:{ex.Message}>>>{ex.StackTrace}");
+			LogHelper.WriteLogAsync($"请求出现报错:{ex.Message}>>>{ex.StackTrace}");
 		}
 	}
 }

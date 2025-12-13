@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Diagnostics;
 using Blurhash.ImageSharp;
 using Pap.erNet.Models;
@@ -37,6 +36,7 @@ public class WallpaperListService
 				Thumbnail = thumbnail,
 				ResolutionRatio = ComputeResolutionRatio(entry.Width, entry.Height),
 			};
+			LogHelper.WriteLogAsync($"返回的结果:{res.Author} >>>>> {res.Url}");
 			yield return res;
 		}
 	}

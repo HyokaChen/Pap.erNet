@@ -77,10 +77,8 @@ namespace Pap.erNet.Utils
 				{
 					return logFilePath;
 				}
-				else
-				{
-					return Path.Combine("Log/", $"{DateTime.Now:yyyy-MM-dd}");
-				}
+
+				return Path.Combine("Log", $"{DateTime.Now:yyyy-MM-dd}");
 			}
 		}
 		#endregion
@@ -291,6 +289,15 @@ namespace Pap.erNet.Utils
 					fs.Dispose();
 				}
 			}
+		}
+
+		/// <summary>
+		/// 写日志
+		/// </summary>
+		/// <param name="strLog">日志内容</param>
+		public static void WriteLogAsync(string strLog)
+		{
+			WriteLogAsync(strLog, LogType.All);
 		}
 
 		/// <summary>

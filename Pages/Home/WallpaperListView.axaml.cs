@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Avalonia.Controls;
+using Pap.erNet.Utils;
 using Pap.erNet.ViewModels;
 
 namespace Pap.erNet.Pages.Home;
@@ -18,26 +19,41 @@ public partial class WallpaperListView : UserControl
 		if (DataContext is not WallpaperListViewModel vm)
 			return;
 
-		var offset = scrollViewer.Offset.Length; // 偏移量
+		var offset = scrollViewer.Offset.Y; // 垂直偏移量
+		var viewportHeight = scrollViewer.Viewport.Height; // 视口高度
+		var itemHeight = 200; // 每个壁纸项的高度（根据WallpaperView的DesignHeight）
+
+		// 计算可见项的范围
+		var firstVisibleIndex = Math.Max(0, (int)(offset / itemHeight) - 1); // 减少1个作为缓冲
+		var lastVisibleIndex = Math.Min(vm.WallpaperListItems.Count - 1, (int)((offset + viewportHeight) / itemHeight) + 1); // 增加1个作为缓冲
+
+		// 重置所有项的加载状态为false
+		for (var i = 0; i < vm.WallpaperListItems.Count; i++)
+		{
+			vm.WallpaperListItems[i].IsLoad = false;
+		}
+
+		// 只为可见项设置加载状态为true
+		for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++)
+		{
+			if (i >= 0 && i < vm.WallpaperListItems.Count)
+			{
+				vm.WallpaperListItems[i].IsLoad = true;
+			}
+		}
+
 		var total = scrollViewer.Extent.Height; // 可滚动内容范围
-		var winHeight = scrollViewer.DesiredSize.Height; // 窗体高度
-		var computeHeight = total - winHeight * 2; // 计算高度
-		var itemCount = (int)(offset / winHeight) * 3;
+		var computeHeight = total - viewportHeight * 2; // 计算高度
+
 		if (offset > 0 && offset >= computeHeight)
 		{
-			// TODO: change load status
+			// 加载更多壁纸
 			vm.LoadNextWallpapersAsync();
 		}
-		if (offset > 0)
+
+		if (offset <= 0)
 		{
-			Debug.WriteLine(
-				$"offset::{offset},extent::{total},winHeight::{winHeight},,,经过了{itemCount}个，总共有: {vm.WallpaperListItems.Count}, 是不是符合最新的url::: {vm.WallpaperListItems[itemCount].ImageSource}"
-			);
-			vm.LoadNextStatusAsync(itemCount);
-		}
-		else
-		{
-			Debug.WriteLine($"初次请求了吗？{vm.WallpaperListItems.Count}");
+			LogHelper.WriteLogAsync($"初次请求了吗？{vm.WallpaperListItems.Count}");
 		}
 	}
 }

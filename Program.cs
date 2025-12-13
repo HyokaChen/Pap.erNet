@@ -27,7 +27,8 @@ sealed class Program
 		}
 		catch (Exception ex)
 		{
-			LogHelper.WriteLog($"启动异常::{ex.Message}>>>{ex.StackTrace}");
+			LogHelper.WriteLogAsync($"启动异常::{ex.Message}>>>{ex.StackTrace}");
+			throw ex;
 		}
 	}
 
