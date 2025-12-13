@@ -13,6 +13,8 @@
 		<ImplicitUsings>true</ImplicitUsings>
 		<!--不需要特定于全球化的代码和数据，使用固定模式-->
 		<InvariantGlobalization>true</InvariantGlobalization>
+		<PublishSingleFile>true</PublishSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
 		<DefineConstants>$(DefineConstants);ENABLE_XAML_HOT_RELOAD</DefineConstants>

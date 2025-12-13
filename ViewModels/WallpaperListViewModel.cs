@@ -126,7 +126,7 @@ public class WallpaperListViewModel : ViewModelBase
 				tasks.Add(
 					Task.Run(async () =>
 					{
-						await LoadStatusChannel.Writer.WriteAsync(idx);
+						await LoadStatusChannel.Writer.WriteAsync((idx, true));
 					})
 				);
 			}
@@ -138,18 +138,15 @@ public class WallpaperListViewModel : ViewModelBase
 	{
 		Task.Run(async () =>
 		{
-			Debug.WriteLine($"滚动塞了多少数据:({startIdx + 1}->{startIdx + 4})");
-			List<Task> tasks = new(4);
-			for (var idx = startIdx + 1; idx < startIdx + 5; idx++)
-			{
-				tasks.Add(
-					Task.Run(async () =>
-					{
-						await LoadStatusChannel.Writer.WriteAsync(idx);
-					})
-				);
-			}
-			await Task.WhenAll([.. tasks]);
+			await LoadStatusChannel.Writer.WriteAsync((startIdx, true));
+		});
+	}
+
+	public void UnLoadNextStatusAsync(int startIdx)
+	{
+		Task.Run(async () =>
+		{
+			await LoadStatusChannel.Writer.WriteAsync((startIdx, false));
 		});
 	}
 
@@ -160,8 +157,9 @@ public class WallpaperListViewModel : ViewModelBase
 		{
 			if (reader.TryRead(out var itemIndex))
 			{
-				if (itemIndex < WallpaperListItems.Count)
-					WallpaperListItems[itemIndex].IsLoad = true;
+				var (idx, status) = itemIndex;
+				if (idx < WallpaperListItems.Count)
+					WallpaperListItems[idx].IsLoad = status;
 				else
 					Debug.WriteLine($"滚动太快了！{itemIndex}");
 			}
@@ -172,8 +170,8 @@ public class WallpaperListViewModel : ViewModelBase
 
 	private readonly Nito.AsyncEx.AsyncLock _mutex = new();
 
-	public Channel<int> LoadStatusChannel { get; init; } =
-		Channel.CreateBounded<int>(new BoundedChannelOptions(10) { FullMode = BoundedChannelFullMode.DropOldest });
+	public Channel<(int, bool)> LoadStatusChannel { get; init; } =
+		Channel.CreateBounded<(int, bool)>(new BoundedChannelOptions(10) { FullMode = BoundedChannelFullMode.DropOldest });
 
 	~WallpaperListViewModel()
 	{

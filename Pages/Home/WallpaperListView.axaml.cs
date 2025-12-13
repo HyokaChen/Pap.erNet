@@ -30,7 +30,7 @@ public partial class WallpaperListView : UserControl
 		// 重置所有项的加载状态为false
 		for (var i = 0; i < vm.WallpaperListItems.Count; i++)
 		{
-			vm.WallpaperListItems[i].IsLoad = false;
+			vm.UnLoadNextStatusAsync(i);
 		}
 
 		// 只为可见项设置加载状态为true
@@ -38,7 +38,7 @@ public partial class WallpaperListView : UserControl
 		{
 			if (i >= 0 && i < vm.WallpaperListItems.Count)
 			{
-				vm.WallpaperListItems[i].IsLoad = true;
+				vm.LoadNextStatusAsync(i);
 			}
 		}
 
