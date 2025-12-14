@@ -48,20 +48,13 @@ jobs:
     - name: Publish .NET App for ${{ matrix.rid }}
       run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o ./publish
 
-    - name: Get latest tag pushed
-      id: tag
-      uses: 32teeth/action-github-tag@v1
-      with:
-        # Return only the tag number (e.g., v1.0.0 -> 1.0.0)
-        numbers_only: true
-
     - name: Zip published artifacts for ${{ matrix.rid }}
       uses: TheDoctor0/zip-release@0.7.6
       with:
-        filename: Pap.erNet-${{ steps.tag.outputs.tag }}-${{ matrix.rid }}.zip
+        filename: Pap.erNet-${{ github.ref_name }}-${{ matrix.rid }}.zip
         path: ./publish
 
     - name: Upload Release Asset for ${{ matrix.rid }}
       uses: softprops/action-gh-release@v2
       with:
-        files: Pap.erNet-${{ steps.tag.outputs.tag }}-${{ matrix.rid }}.zip
+        files: Pap.erNet-${{ github.ref_name }}-${{ matrix.rid }}.zip
