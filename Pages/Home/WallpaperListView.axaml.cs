@@ -19,6 +19,10 @@ public partial class WallpaperListView : UserControl
 		if (DataContext is not WallpaperListViewModel vm)
 			return;
 
+		// 如果列表为空，直接返回
+		if (vm.WallpaperListItems.Count == 0)
+			return;
+
 		var offset = scrollViewer.Offset.Y; // 垂直偏移量
 		var viewportHeight = scrollViewer.Viewport.Height; // 视口高度
 		var itemHeight = 200; // 每个壁纸项的高度（根据WallpaperView的DesignHeight）
