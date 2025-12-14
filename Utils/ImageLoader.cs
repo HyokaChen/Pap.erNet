@@ -39,8 +39,8 @@ public class ImageLoader
 	}
 
 	private static readonly string TempFolder = Path.Combine(
-		Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-		"Temp"
+		Path.GetTempPath(),
+		"Pap.erNet"
 	);
 
 	private static DiskCachedWebImageLoader AsyncImageLoader { get; set; } = new(TempFolder);
