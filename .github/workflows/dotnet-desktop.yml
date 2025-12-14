@@ -7,6 +7,9 @@ on:
      - '*.*.*'
      - '*'
 
+permissions:
+  contents: write  # 关键：授予写入内容的权限
+
 jobs:
   build:
     # 使用构建矩阵来定义多个目标平台
