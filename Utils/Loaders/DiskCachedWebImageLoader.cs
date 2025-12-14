@@ -35,15 +35,6 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader
 		return File.Exists(path) ? Task.FromResult<Bitmap?>(new Bitmap(path)) : Task.FromResult<Bitmap?>(null);
 	}
 
-#if NETSTANDARD2_1
-	protected override async Task SaveToGlobalCache(string url, byte[] imageBytes)
-	{
-		var path = Path.Combine(_cacheFolder, CreateMD5(url));
-
-		Directory.CreateDirectory(_cacheFolder);
-		await File.WriteAllBytesAsync(path, imageBytes).ConfigureAwait(false);
-	}
-#else
 	protected override Task SaveToGlobalCache(string url, byte[] imageBytes)
 	{
 		var path = Path.Combine(_cacheFolder, CreateMd5(url));
@@ -51,7 +42,6 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader
 		File.WriteAllBytes(path, imageBytes);
 		return Task.CompletedTask;
 	}
-#endif
 
 	private static string CreateMd5(string input)
 	{

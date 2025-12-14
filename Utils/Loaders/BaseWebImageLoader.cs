@@ -52,10 +52,7 @@ public class BaseWebImageLoader : IAsyncImageLoader
 	/// <returns>Bitmap</returns>
 	protected virtual async Task<Bitmap?> LoadAsync(string url)
 	{
-		var internalOrCachedBitmap =
-			await LoadFromLocalAsync(url).ConfigureAwait(false)
-			?? await LoadFromInternalAsync(url).ConfigureAwait(false)
-			?? await LoadFromGlobalCache(url).ConfigureAwait(false);
+		var internalOrCachedBitmap = await LoadFromGlobalCache(url).ConfigureAwait(false);
 		if (internalOrCachedBitmap != null)
 			return internalOrCachedBitmap;
 
@@ -72,47 +69,8 @@ public class BaseWebImageLoader : IAsyncImageLoader
 		}
 		catch (Exception ex)
 		{
-			LogHelper.WriteLogAsync($"Request Error::{ex.Message}");
+			LogHelper.WriteLogAsync($"Request Error::{ex.Message} >>> {ex.StackTrace}");
 			throw ex;
-		}
-	}
-
-	/// <summary>
-	/// the url maybe is local file url,so if file exists ,we got a Bitmap
-	/// </summary>
-	/// <param name="url"></param>
-	/// <returns></returns>
-	private Task<Bitmap?> LoadFromLocalAsync(string url)
-	{
-		return Task.FromResult(File.Exists(url) ? new Bitmap(url) : null);
-	}
-
-	/// <summary>
-	///     Receives image bytes from an internal source (for example, from the disk).
-	///     This data will be NOT cached globally (because it is assumed that it is already in internal source us and does not
-	///     require global caching)
-	/// </summary>
-	/// <param name="url">Target url</param>
-	/// <returns>Bitmap</returns>
-	protected virtual Task<Bitmap?> LoadFromInternalAsync(string url)
-	{
-		try
-		{
-			var uri = url.StartsWith("/") ? new Uri(url, UriKind.Relative) : new Uri(url, UriKind.RelativeOrAbsolute);
-
-			if (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
-				return Task.FromResult<Bitmap?>(null);
-
-			if (uri is { IsAbsoluteUri: true, IsFile: true })
-				return Task.FromResult(new Bitmap(uri.LocalPath))!;
-
-			return Task.FromResult(new Bitmap(AssetLoader.Open(uri)))!;
-		}
-		catch (Exception e)
-		{
-			_logger?.Log(this, "Failed to resolve image from request with uri: {RequestUri}\nException: {Exception}", url, e);
-			throw e;
-			//return Task.FromResult<Bitmap?>(null);
 		}
 	}
 

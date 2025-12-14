@@ -12,7 +12,7 @@ public partial class WallpaperListView : UserControl
 		InitializeComponent();
 	}
 
-	private async void ScrollViewer_ScrollChanged(object? sender, ScrollChangedEventArgs e)
+	private void ScrollViewer_ScrollChanged(object? sender, ScrollChangedEventArgs e)
 	{
 		if (sender is not ScrollViewer scrollViewer)
 			return;
