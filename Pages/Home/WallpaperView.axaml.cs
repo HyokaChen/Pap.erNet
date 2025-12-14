@@ -49,7 +49,6 @@ public partial class WallpaperView : UserControl
 
 	private async void SetDeskWallpaper_PointerPressed(object? sender, PointerPressedEventArgs e)
 	{
-		// TODO: set window wallpaper with show progress bar
 		DownloadPB.IsVisible = true;
 		var vm = DataContext as WallpaperViewModel;
 		var fileName = vm.ImageSource.Split("/")[^2];
@@ -60,7 +59,16 @@ public partial class WallpaperView : UserControl
 			await DownloadAsync(fullUrl, filePath);
 		}
 		DownloadPB.IsVisible = false;
-		_ = SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, filePath, SPIF_UPDATEINIFILE);
+
+		// 跨平台设置桌面壁纸
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+		{
+			SetWindowsWallpaper(filePath);
+		}
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+		{
+			await SetLinuxWallpaper(filePath);
+		}
 	}
 
 	private async Task DownloadAsync(string fullUrl, string filePath)
@@ -118,6 +126,140 @@ public partial class WallpaperView : UserControl
 		catch (Exception ex)
 		{
 			LogHelper.WriteLogAsync($"请求出现报错:{ex.Message}>>>{ex.StackTrace}");
+		}
+	}
+
+	private void SetWindowsWallpaper(string filePath)
+	{
+		_ = SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, filePath, SPIF_UPDATEINIFILE);
+	}
+
+	private async Task SetLinuxWallpaper(string filePath)
+	{
+		try
+		{
+			// 检测当前桌面环境
+			var desktopEnv = GetLinuxDesktopEnvironment();
+			var success = false;
+			var errorMsg = string.Empty;
+
+			switch (desktopEnv)
+			{
+				case "gnome":
+				{
+					var resStatus = await SetGnomeWallpaper(filePath);
+					success = resStatus.Success;
+					errorMsg = resStatus.ErrorMessage;
+					break;
+				}
+				case "kde":
+				{
+					var resStatus = await SetKdeWallpaper(filePath);
+					success = resStatus.Success;
+					errorMsg = resStatus.ErrorMessage;
+					break;
+				}
+			}
+
+			if (success)
+			{
+				LogHelper.WriteLogAsync($"Linux壁纸设置成功，桌面环境: {desktopEnv}");
+			}
+			else
+			{
+				LogHelper.WriteLogAsync($"Linux壁纸设置失败: {errorMsg}");
+			}
+		}
+		catch (Exception ex)
+		{
+			LogHelper.WriteLogAsync($"Linux壁纸设置出现报错: {ex.Message}>>>{ex.StackTrace}");
+		}
+	}
+
+	private string GetLinuxDesktopEnvironment()
+	{
+		// 尝试从环境变量获取桌面环境
+		var desktopSession = Environment.GetEnvironmentVariable("DESKTOP_SESSION")?.ToLower();
+		var xdgCurrentDesktop = Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")?.ToLower();
+
+		if (!string.IsNullOrEmpty(xdgCurrentDesktop))
+		{
+			if (xdgCurrentDesktop.Contains("gnome"))
+				return "gnome";
+			if (xdgCurrentDesktop.Contains("kde"))
+				return "kde";
+		}
+
+		if (!string.IsNullOrEmpty(desktopSession))
+		{
+			if (desktopSession.Contains("gnome") || desktopSession.Contains("ubuntu"))
+				return "gnome";
+			if (desktopSession.Contains("kde") || desktopSession.Contains("plasma"))
+				return "kde";
+		}
+
+		return "unknown";
+	}
+
+	private async Task<(bool Success, string ErrorMessage)> SetGnomeWallpaper(string filePath)
+	{
+		try
+		{
+			var fileUri = new Uri(filePath).AbsoluteUri;
+
+			// 设置背景图片路径
+			var processStartInfo = new ProcessStartInfo
+			{
+				FileName = "gsettings",
+				Arguments = $"set org.gnome.desktop.background picture-uri '{fileUri}'",
+				UseShellExecute = false,
+				CreateNoWindow = true,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+			};
+
+			using var process = Process.Start(processStartInfo);
+			await process!.WaitForExitAsync();
+
+			await process.StandardOutput.ReadToEndAsync();
+			var errorMsg = await process.StandardError.ReadToEndAsync();
+
+			return (process.ExitCode == 0, errorMsg);
+		}
+		catch (Exception ex)
+		{
+			var errorMsg = ex.Message;
+			return (false, errorMsg);
+		}
+	}
+
+	private async Task<(bool Success, string ErrorMessage)> SetKdeWallpaper(string filePath)
+	{
+		try
+		{
+			// 使用plasma-apply-wallpaperimage命令设置KDE壁纸
+			var processStartInfo = new ProcessStartInfo
+			{
+				FileName = "plasma-apply-wallpaperimage",
+				Arguments = filePath,
+				UseShellExecute = false,
+				CreateNoWindow = true,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+			};
+
+			using var process = Process.Start(processStartInfo);
+			await process!.WaitForExitAsync();
+
+			await process.StandardOutput.ReadToEndAsync();
+			var errorMsg = await process.StandardError.ReadToEndAsync();
+
+			return (process.ExitCode == 0, errorMsg);
+		}
+		catch (Exception ex)
+		{
+			var errorMsg = ex.Message;
+			return (false, errorMsg);
 		}
 	}
 }

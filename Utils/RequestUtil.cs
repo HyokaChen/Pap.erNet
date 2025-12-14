@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Security;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -41,7 +43,21 @@ namespace Pap.erNet.Utils
 				  }
 				}
 				""";
-		public static HttpClient PhotosHttpClient { get; set; } = new() { Timeout = TimeSpan.FromSeconds(30) };
+		public static HttpClient PhotosHttpClient { get; set; } =
+			new(
+				new SocketsHttpHandler()
+				{
+					UseProxy = false,
+					AllowAutoRedirect = true,
+					SslOptions = new SslClientAuthenticationOptions()
+					{
+						RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true,
+					},
+				}
+			)
+			{
+				Timeout = TimeSpan.FromSeconds(30),
+			};
 
 		static RequestUtil()
 		{
@@ -53,7 +69,6 @@ namespace Pap.erNet.Utils
 			PhotosHttpClient.DefaultRequestHeaders.Add("X-APOLLO-OPERATION-NAME", "Photos");
 			PhotosHttpClient.DefaultRequestHeaders.Add("X-APOLLO-OPERATION-TYPE", "query");
 			PhotosHttpClient.DefaultRequestHeaders.Add("apollographql-client-name", "com.w.paper-apollo-ios");
-			// PhotosHttpClient.DefaultRequestHeaders.Add("User-Agent", "pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
 			PhotosHttpClient.DefaultRequestHeaders.UserAgent.ParseAdd("pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
 		}
 

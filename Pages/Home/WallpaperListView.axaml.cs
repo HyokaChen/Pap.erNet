@@ -34,7 +34,8 @@ public partial class WallpaperListView : UserControl
 		}
 
 		// 只为可见项设置加载状态为true
-		for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++)
+		LogHelper.WriteLogAsync($"可见项范围：{firstVisibleIndex} - {lastVisibleIndex}");
+		for (var i = firstVisibleIndex; i <= lastVisibleIndex; i++)
 		{
 			if (i >= 0 && i < vm.WallpaperListItems.Count)
 			{

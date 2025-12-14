@@ -1,0 +1,67 @@
+name: .NET Core Desktop
+
+on:
+  push:
+    tags:
+     - 'v*.*.*'
+     - '*.*.*'
+     - '*'
+
+jobs:
+  build:
+    # 使用构建矩阵来定义多个目标平台
+    strategy:
+      # 如果一个平台构建失败，其他平台会继续构建
+      fail-fast: false
+      matrix:
+        # 定义每个平台的目标配置
+        include:
+          # Windows 64位
+          - os: windows-latest
+            rid: win-x64
+          # Linux 64位
+          - os: ubuntu-latest
+            rid: linux-x64
+          # macOS 64位 (Intel)
+          #- os: macos-latest
+          #  rid: osx-x64
+          # macOS ARM64 (Apple Silicon)
+          #- os: macos-latest
+          #  rid: osx-arm64
+     # 每个矩阵组合都会在指定的操作系统上运行
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.101
+
+    - name: Restore the application
+      run:  dotnet restore
+
+    - name: Publish .NET App for ${{ matrix.rid }}
+      run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o ./publish
+
+    - name: Get latest tag pushed
+      id: tag
+      uses: 32teeth/action-github-tag@v1
+      with:
+        # Return only the tag number (e.g., v1.0.0 -> 1.0.0)
+        numbers_only: true
+
+    - name: Zip published artifacts for ${{ matrix.rid }}
+      uses: TheDoctor0/zip-release@0.7.6
+      with:
+        filename: Pap.erNet-${{ steps.tag.outputs.tag }}-${{ matrix.rid }}.zip
+        path: ./publish
+
+    - name: Upload Release Asset for ${{ matrix.rid }}
+      uses: softprops/action-gh-release@v2
+      with:
+        files: Pap.erNet-${{ steps.tag.outputs.tag }}-${{ matrix.rid }}.zip
