@@ -13,22 +13,25 @@ sealed class Program
 	[STAThread]
 	public static void Main(string[] args)
 	{
+		// 使用跨平台单例检测
+		using var singleInstance = new SingleInstanceHelper("c270d6ef-7197-4150-99b9-b4d3d330f9a0");
+
 		try
 		{
-			var mutex = new Mutex(true, "c270d6ef-7197-4150-99b9-b4d3d330f9a0", out bool mutexResult);
-
-			if (!mutexResult)
+			// 尝试获取单例锁
+			if (!singleInstance.TryAcquireLock())
 			{
+				// 已有实例在运行，退出
 				return;
 			}
+
 			var builder = BuildAvaloniaApp();
 			builder.StartWithClassicDesktopLifetime(args, Avalonia.Controls.ShutdownMode.OnExplicitShutdown);
-			mutex.ReleaseMutex();
 		}
 		catch (Exception ex)
 		{
 			LogHelper.WriteLogAsync($"启动异常::{ex.Message}>>>{ex.StackTrace}");
-			throw ex;
+			throw;
 		}
 	}
 

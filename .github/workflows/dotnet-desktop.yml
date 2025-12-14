@@ -54,8 +54,10 @@ jobs:
     - name: Zip published artifacts for ${{ matrix.rid }}
       uses: TheDoctor0/zip-release@0.7.6
       with:
-        filename: Pap.erNet-${{ github.ref_name }}-${{ matrix.rid }}.zip
-        path: ./publish/*
+        type: 'zip'
+        filename: '../Pap.erNet-${{ github.ref_name }}-${{ matrix.rid }}.zip'
+        directory: ./publish
+        path: .
         exclusions: '*.dbg *.pdb'
         recursive_exclusions: '**/*.pdb **/*.dbg'
 
