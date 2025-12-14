@@ -31,19 +31,19 @@ public partial class WallpaperListView : UserControl
 		var firstVisibleIndex = Math.Max(0, (int)(offset / itemHeight) - 1); // 减少1个作为缓冲
 		var lastVisibleIndex = Math.Min(vm.WallpaperListItems.Count - 1, (int)((offset + viewportHeight) / itemHeight) + 1); // 增加1个作为缓冲
 
-		// 重置所有项的加载状态为false
+		LogHelper.WriteLogAsync($"可见项范围：{firstVisibleIndex} - {lastVisibleIndex}");
+
+		// 更新所有项的加载状态
 		for (var i = 0; i < vm.WallpaperListItems.Count; i++)
 		{
-			vm.UnLoadNextStatusAsync(i);
-		}
-
-		// 只为可见项设置加载状态为true
-		LogHelper.WriteLogAsync($"可见项范围：{firstVisibleIndex} - {lastVisibleIndex}");
-		for (var i = firstVisibleIndex; i <= lastVisibleIndex; i++)
-		{
-			if (i >= 0 && i < vm.WallpaperListItems.Count)
+			// 只为可见项设置加载状态为true，其他项设置为false
+			if (i >= firstVisibleIndex && i <= lastVisibleIndex)
 			{
 				vm.LoadNextStatusAsync(i);
+			}
+			else
+			{
+				vm.UnLoadNextStatusAsync(i);
 			}
 		}
 
