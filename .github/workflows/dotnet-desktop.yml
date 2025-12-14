@@ -49,7 +49,7 @@ jobs:
       run:  dotnet restore
 
     - name: Publish .NET App for ${{ matrix.rid }}
-      run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained false -p:PublishSingleFile=true -o ./publish
+      run: dotnet publish -c Release -r ${{ matrix.rid }} -o ./publish
 
     - name: Zip published artifacts for ${{ matrix.rid }}
       uses: TheDoctor0/zip-release@0.7.6

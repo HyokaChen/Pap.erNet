@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Pap.erNet.Models;
 using Pap.erNet.Services;
+using Pap.erNet.Utils;
 using ReactiveUI;
 
 namespace Pap.erNet.ViewModels;
@@ -13,11 +14,17 @@ public class WallpaperListViewModel : ViewModelBase
 {
 	private readonly WallpaperListService _service = new();
 
-	private readonly IReadOnlyList<int> RUN_RANGE_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-
 	private ConfiguredCancelableAsyncEnumerable<Wallpaper>.Enumerator? _wallpapersGenerator;
 
 	private const int NEXT_BATCH = 10;
+
+	private int _isLoading = 0;
+
+	private bool _isBatchAdding = false;
+
+	public bool IsBatchAdding => _isBatchAdding;
+
+	public event Action? BatchAddingCompleted;
 
 	public WallpaperListViewModel()
 	{
@@ -26,111 +33,119 @@ public class WallpaperListViewModel : ViewModelBase
 
 	public void LoadNextDiscoverWallpapersAsync()
 	{
+		if (Interlocked.CompareExchange(ref _isLoading, 1, 0) != 0)
+		{
+			LogHelper.WriteLogAsync("LoadNextDiscoverWallpapersAsync: 已经在加载中，跳过");
+			return;
+		}
+
 		Task.Run(async () =>
 		{
-			WallpaperListItems.Clear();
-			_wallpapersGenerator = _service.DiscoverItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
-			await InternalNext(true);
+			try
+			{
+				LogHelper.WriteLogAsync("LoadNextDiscoverWallpapersAsync: 开始加载");
+				WallpaperListItems.Clear();
+				_wallpapersGenerator = _service.DiscoverItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
+				await InternalNext();
+			}
+			finally
+			{
+				Interlocked.Exchange(ref _isLoading, 0);
+				LogHelper.WriteLogAsync("LoadNextDiscoverWallpapersAsync: 加载完成");
+			}
 		});
 	}
 
 	public void LoadNextLatestWallpapersAsync()
 	{
+		if (Interlocked.CompareExchange(ref _isLoading, 1, 0) != 0)
+		{
+			LogHelper.WriteLogAsync("LoadNextLatestWallpapersAsync: 已经在加载中，跳过");
+			return;
+		}
+
 		Task.Run(async () =>
 		{
-			WallpaperListItems.Clear();
-			_wallpapersGenerator = _service.LatestItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
-			await InternalNext(true);
+			try
+			{
+				LogHelper.WriteLogAsync("LoadNextLatestWallpapersAsync: 开始加载");
+				WallpaperListItems.Clear();
+				_wallpapersGenerator = _service.LatestItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
+				await InternalNext();
+			}
+			finally
+			{
+				Interlocked.Exchange(ref _isLoading, 0);
+				LogHelper.WriteLogAsync("LoadNextLatestWallpapersAsync: 加载完成");
+			}
 		});
 	}
 
 	public void LoadNextVerticalScreenWallpapersAsync()
 	{
-		Task.Run(async () =>
+		if (Interlocked.CompareExchange(ref _isLoading, 1, 0) != 0)
 		{
-			WallpaperListItems.Clear();
-			_wallpapersGenerator = _service.VerticalScreenItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
-			await InternalNext(true);
-		});
-	}
+			LogHelper.WriteLogAsync("LoadNextVerticalScreenWallpapersAsync: 已经在加载中，跳过");
+			return;
+		}
 
-	public void LoadDiscoverWallpapersAsync()
-	{
 		Task.Run(async () =>
 		{
-			WallpaperListItems.Clear();
-			await foreach (var wallpaper in _service.DiscoverItemsAsync().ConfigureAwait(false))
+			try
 			{
-				var wallpaperViewModel = new WallpaperViewModel(wallpaper);
-				WallpaperListItems.Add(wallpaperViewModel);
+				LogHelper.WriteLogAsync("LoadNextVerticalScreenWallpapersAsync: 开始加载");
+				WallpaperListItems.Clear();
+				_wallpapersGenerator = _service.VerticalScreenItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
+				await InternalNext();
+			}
+			finally
+			{
+				Interlocked.Exchange(ref _isLoading, 0);
+				LogHelper.WriteLogAsync("LoadNextVerticalScreenWallpapersAsync: 加载完成");
 			}
 		});
 	}
 
-	public void LoadLatestWallpapersAsync()
+	public void LoadNextWallpapersAsync()
 	{
-		Task.Run(async () =>
-		{
-			WallpaperListItems.Clear();
-			await foreach (var wallpaper in _service.LatestItemsAsync().ConfigureAwait(false))
-			{
-				var wallpaperViewModel = new WallpaperViewModel(wallpaper);
-				WallpaperListItems.Add(wallpaperViewModel);
-			}
-		});
+		Task.Run(async () => await InternalNext());
 	}
 
-	public void LoadVerticalScreenWallpapersAsync()
+	private async Task InternalNext()
 	{
-		Task.Run(async () =>
-		{
-			WallpaperListItems.Clear();
-			await foreach (var wallpaper in _service.VerticalScreenItemsAsync().ConfigureAwait(false))
-			{
-				var wallpaperViewModel = new WallpaperViewModel(wallpaper);
-				WallpaperListItems.Add(wallpaperViewModel);
-			}
-		});
-	}
-
-	public void LoadNextWallpapersAsync(bool needInitLoadStatus = false)
-	{
-		Task.Run(async () => await InternalNext(needInitLoadStatus));
-	}
-
-	private async Task InternalNext(bool needInitLoadStatus)
-	{
+		LogHelper.WriteLogAsync($"InternalNext 开始执行，当前 Count: {WallpaperListItems.Count}");
+		var i = 0;
 		using (await _mutex.LockAsync())
 		{
-			int i = 0;
-			while (_wallpapersGenerator.HasValue && i < NEXT_BATCH)
+			_isBatchAdding = true;
+			try
 			{
-				var hasValue = await _wallpapersGenerator.Value.MoveNextAsync();
-
-				if (hasValue)
+				while (_wallpapersGenerator.HasValue && i < NEXT_BATCH)
 				{
-					var wallpaper = _wallpapersGenerator.Value.Current;
-					var wallpaperViewModel = new WallpaperViewModel(wallpaper);
-					WallpaperListItems.Add(wallpaperViewModel);
-					i++;
-				}
-			}
-			Debug.WriteLine($"WallpaperListItems's count:::{WallpaperListItems.Count}");
-		}
-		if (needInitLoadStatus)
-		{
-			List<Task> tasks = new(10);
+					var hasValue = await _wallpapersGenerator.Value.MoveNextAsync();
 
-			foreach (var idx in RUN_RANGE_LIST)
-			{
-				tasks.Add(
-					Task.Run(async () =>
+					if (hasValue)
 					{
-						await LoadStatusChannel.Writer.WriteAsync((idx, true));
-					})
-				);
+						var wallpaper = _wallpapersGenerator.Value.Current;
+						var wallpaperViewModel = new WallpaperViewModel(wallpaper);
+						WallpaperListItems.Add(wallpaperViewModel);
+						i++;
+						LogHelper.WriteLogAsync($"InternalNext 添加了第 {i} 个项目，总数: {WallpaperListItems.Count}");
+					}
+					else
+					{
+						LogHelper.WriteLogAsync($"InternalNext MoveNextAsync 返回 false，没有更多数据");
+						break;
+					}
+				}
+				LogHelper.WriteLogAsync($"InternalNext 完成，本次添加 {i} 个，总数: {WallpaperListItems.Count}");
 			}
-			await Task.WhenAll([.. tasks]);
+			finally
+			{
+				_isBatchAdding = false;
+				// 触发批量添加完成事件
+				BatchAddingCompleted?.Invoke();
+			}
 		}
 	}
 
@@ -161,7 +176,7 @@ public class WallpaperListViewModel : ViewModelBase
 				if (idx < WallpaperListItems.Count)
 					WallpaperListItems[idx].IsLoad = status;
 				else
-					Debug.WriteLine($"滚动太快了！{itemIndex}");
+					LogHelper.WriteLogAsync($"滚动太快了！{itemIndex}");
 			}
 		}
 	}

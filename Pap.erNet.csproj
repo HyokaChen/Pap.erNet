@@ -13,8 +13,6 @@
 		<ImplicitUsings>true</ImplicitUsings>
 		<!--不需要特定于全球化的代码和数据，使用固定模式-->
 		<InvariantGlobalization>true</InvariantGlobalization>
-		<PublishSingleFile>true</PublishSingleFile>
-		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
 		<DefineConstants>$(DefineConstants);ENABLE_XAML_HOT_RELOAD</DefineConstants>
@@ -24,12 +22,16 @@
 		<PublishTrimmed>true</PublishTrimmed>
 		<!--自包含-->
 		<SelfContained>true</SelfContained>
+		<PublishSingleFile>true</PublishSingleFile>
 		<!--Aot发布-->
 		<PublishAot>true</PublishAot>
 		<!--引入的大小与速度选项-->
 		<OptimizationPreference>Size</OptimizationPreference>
 		<!--不关心在发生异常时拥有良好的堆栈跟踪-->
 		<StackTraceSupport>true</StackTraceSupport>
+		<DebugSymbols>false</DebugSymbols>
+		<DebugType>none</DebugType>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 	</PropertyGroup>
 
 	<ItemGroup>
