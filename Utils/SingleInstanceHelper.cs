@@ -5,7 +5,7 @@ namespace Pap.erNet.Utils
 	/// <summary>
 	/// 跨平台单例应用程序检测助手
 	/// Windows: 使用 Mutex
-	/// Linux/macOS: 使用文件锁
+	/// Linux/macOS: 使用 flock 文件锁
 	/// </summary>
 	public class SingleInstanceHelper : IDisposable
 	{
@@ -13,6 +13,14 @@ namespace Pap.erNet.Utils
 		private FileStream? _lockFileStream;
 		private readonly string _identifier;
 		private bool _isOwned;
+
+		// Linux flock 系统调用
+		[DllImport("libc", SetLastError = true)]
+		private static extern int flock(int fd, int operation);
+
+		private const int LOCK_EX = 2; // 独占锁
+		private const int LOCK_NB = 4; // 非阻塞
+		private const int LOCK_UN = 8; // 解锁
 
 		/// <summary>
 		/// 创建单例检测助手
@@ -57,7 +65,7 @@ namespace Pap.erNet.Utils
 		}
 
 		/// <summary>
-		/// Unix/Linux 平台使用文件锁
+		/// Unix/Linux 平台使用 flock 文件锁
 		/// </summary>
 		private bool TryAcquireLockUnix()
 		{
@@ -67,17 +75,34 @@ namespace Pap.erNet.Utils
 				var tempPath = Path.GetTempPath();
 				var lockFilePath = Path.Combine(tempPath, $"{_identifier}.lock");
 
-				// 打开或创建锁文件
+				// 打开或创建锁文件（不使用 DeleteOnClose，手动管理）
 				_lockFileStream = new FileStream(
 					lockFilePath,
 					FileMode.OpenOrCreate,
 					FileAccess.ReadWrite,
-					FileShare.None, // 独占访问
+					FileShare.ReadWrite, // 允许共享，通过 flock 控制独占
 					1,
-					FileOptions.DeleteOnClose // 进程退出时自动删除
+					FileOptions.None
 				);
 
-				// 写入进程 ID
+				// 获取文件描述符
+				var fileHandle = _lockFileStream.SafeFileHandle.DangerousGetHandle();
+				var fd = fileHandle.ToInt32();
+
+				// 尝试获取独占锁（非阻塞）
+				var result = flock(fd, LOCK_EX | LOCK_NB);
+
+				if (result != 0)
+				{
+					// 获取锁失败，说明已有实例在运行
+					_lockFileStream.Close();
+					_lockFileStream.Dispose();
+					_lockFileStream = null;
+					return false;
+				}
+
+				// 成功获取锁，写入进程 ID
+				_lockFileStream.SetLength(0); // 清空文件
 				var processId = Environment.ProcessId.ToString();
 				var bytes = System.Text.Encoding.UTF8.GetBytes(processId);
 				_lockFileStream.Write(bytes, 0, bytes.Length);
@@ -86,13 +111,21 @@ namespace Pap.erNet.Utils
 				_isOwned = true;
 				return true;
 			}
-			catch (IOException)
+			catch (Exception ex)
 			{
-				// 文件被其他进程锁定，说明已有实例在运行
-				return false;
-			}
-			catch
-			{
+				// 记录异常信息以便调试
+				LogHelper.WriteLogAsync($"单例锁获取失败: {ex.Message}");
+
+				if (_lockFileStream != null)
+				{
+					try
+					{
+						_lockFileStream.Close();
+						_lockFileStream.Dispose();
+					}
+					catch { }
+					_lockFileStream = null;
+				}
 				return false;
 			}
 		}
@@ -120,6 +153,14 @@ namespace Pap.erNet.Utils
 			{
 				try
 				{
+					// Linux 下释放 flock 锁
+					if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+					{
+						var fileHandle = _lockFileStream.SafeFileHandle.DangerousGetHandle();
+						var fd = fileHandle.ToInt32();
+						flock(fd, LOCK_UN);
+					}
+
 					_lockFileStream.Close();
 					_lockFileStream.Dispose();
 				}
