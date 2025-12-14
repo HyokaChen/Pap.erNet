@@ -37,6 +37,10 @@ public class BaseWebImageLoader : IAsyncImageLoader
 	/// <inheritdoc />
 	public virtual async Task<Bitmap?> ProvideImageAsync(string url)
 	{
+		// Null check to prevent issues with null URLs
+		if (string.IsNullOrEmpty(url))
+			return null;
+
 		return await LoadAsync(url).ConfigureAwait(false);
 	}
 

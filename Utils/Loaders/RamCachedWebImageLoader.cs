@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
@@ -20,6 +20,10 @@ public class RamCachedWebImageLoader : BaseWebImageLoader
 	/// <inheritdoc />
 	public override async Task<Bitmap?> ProvideImageAsync(string url)
 	{
+		// Null check to prevent ArgumentNullException in ConcurrentDictionary.GetOrAdd
+		if (string.IsNullOrEmpty(url))
+			return null;
+
 		var bitmap = await _memoryCache.GetOrAdd(url, LoadAsync).ConfigureAwait(false);
 		// If load failed - remove from cache and return
 		// Next load attempt will try to load image again

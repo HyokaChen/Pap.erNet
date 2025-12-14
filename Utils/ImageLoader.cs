@@ -63,7 +63,7 @@ public class ImageLoader
 			}
 		);
 
-		if (!loadStatus)
+		if (!loadStatus || string.IsNullOrEmpty(url))
 		{
 			_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
 			return;
