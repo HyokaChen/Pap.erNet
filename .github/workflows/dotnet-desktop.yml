@@ -49,14 +49,15 @@ jobs:
       run:  dotnet restore
 
     - name: Publish .NET App for ${{ matrix.rid }}
-      run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained false -p:PublishSingleFile=true -o .
+      run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained false -p:PublishSingleFile=true -o ./publish
 
     - name: Zip published artifacts for ${{ matrix.rid }}
       uses: TheDoctor0/zip-release@0.7.6
       with:
         filename: Pap.erNet-${{ github.ref_name }}-${{ matrix.rid }}.zip
-        path: .
+        path: ./publish/*
         exclusions: '*.dbg *.pdb'
+        recursive_exclusions: '**/*.pdb **/*.dbg'
 
     - name: Upload Release Asset for ${{ matrix.rid }}
       uses: softprops/action-gh-release@v2
