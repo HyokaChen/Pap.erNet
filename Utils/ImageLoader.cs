@@ -38,10 +38,7 @@ public class ImageLoader
 		LoadStatusProperty.Changed.AddClassHandler<Image>(OnLoadStatusChanged);
 	}
 
-	private static readonly string TempFolder = Path.Combine(
-		Path.GetTempPath(),
-		"Pap.erNet"
-	);
+	private static readonly string TempFolder = Path.Combine(Path.GetTempPath(), "Pap.erNet");
 
 	private static DiskCachedWebImageLoader AsyncImageLoader { get; set; } = new(TempFolder);
 
