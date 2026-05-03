@@ -50,26 +50,26 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Avalonia.Desktop" Version="11.3.9" />
+		<PackageReference Include="Avalonia.Desktop" Version="12.0.2" />
 		<PackageReference
 			Condition="$(DefineConstants.Contains(ENABLE_XAML_HOT_RELOAD))"
 			Include="Avalonia.Markup.Xaml.Loader"
-			Version="11.3.9"
+			Version="12.0.2"
 		/>
-		<PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.9">
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.2">
 			<TreatAsUsed>true</TreatAsUsed>
 		</PackageReference>
-		<PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.9" />
-		<PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.9" />
+		<PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.2" />
+		<PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.14" />
 		<PackageReference Include="Avalonia.ReactiveUI" Version="11.3.8" />
-		<PackageReference Include="Blurhash.ImageSharp" Version="4.0.0" />
-		<PackageReference Include="CSharpier.MsBuild" Version="1.2.1">
+		<PackageReference Include="Blurhash.ImageSharp" Version="4.0.1" />
+		<PackageReference Include="CSharpier.MsBuild" Version="1.2.6">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Condition="$(DefineConstants.Contains(ENABLE_XAML_HOT_RELOAD))" Include="HotAvalonia" Version="3.0.1" />
-		<PackageReference Include="HotAvalonia.Extensions" Version="3.0.1" PrivateAssets="All" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+		<PackageReference Condition="$(DefineConstants.Contains(ENABLE_XAML_HOT_RELOAD))" Include="HotAvalonia" Version="3.1.0" />
+		<PackageReference Include="HotAvalonia.Extensions" Version="3.1.0" PrivateAssets="All" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
 		<PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
 	</ItemGroup>
 </Project>
