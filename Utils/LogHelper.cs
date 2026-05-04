@@ -103,6 +103,9 @@ namespace Pap.erNet.Utils
 		/// </summary>
 		static LogHelper()
 		{
+			// 设置控制台输出编码为 UTF-8，避免中文乱码
+			Console.OutputEncoding = Encoding.UTF8;
+
 			qMsg = new Queue<string>();
 			SetCreatedFileCount();
 			RunThread();
