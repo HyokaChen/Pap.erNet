@@ -1,21 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Security;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Pap.erNet.Models;
 
 namespace Pap.erNet.Utils
 {
 	public static class RequestUtil
 	{
-		public const string PAPER_URL = "https://paper.nsns.in/graphql";
-		public static string GraphQLQuery { get; set; } =
+		private const string PAPER_URL = "https://paper.nsns.in/graphql";
+
+		private static string GraphQLQuery =>
 			"""
 				query Photos($after: String, $before: String, $listId: ID, $filters: PhotosFiltersInput) {
 				  photos(after: $after, before: $before, listId: $listId, filters: $filters) {
@@ -43,7 +38,8 @@ namespace Pap.erNet.Utils
 				  }
 				}
 				""";
-		public static HttpClient PhotosHttpClient { get; set; } =
+
+		private static HttpClient PhotosHttpClient { get; } =
 			new(
 				new SocketsHttpHandler()
 				{

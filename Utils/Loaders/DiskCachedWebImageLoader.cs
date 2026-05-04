@@ -1,9 +1,5 @@
-using System;
-using System.IO;
-using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
 namespace Pap.erNet.Utils.Loaders;
@@ -46,11 +42,10 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader
 	private static string CreateMd5(string input)
 	{
 		// Use input string to calculate MD5 hash
-		using var md5 = MD5.Create();
 		var inputBytes = Encoding.ASCII.GetBytes(input);
-		var hashBytes = md5.ComputeHash(inputBytes);
+		var hashBytes = MD5.HashData(inputBytes);
 
 		// Convert the byte array to hexadecimal string
-		return BitConverter.ToString(hashBytes).Replace("-", "");
+		return Convert.ToHexString(hashBytes);
 	}
 }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Avalonia.Controls;
 using Pap.erNet.Utils;
 using Pap.erNet.ViewModels;
@@ -7,8 +6,8 @@ namespace Pap.erNet.Pages.Home;
 
 public partial class WallpaperListView : UserControl
 {
-	private bool _isUpdatingLoadStatus = false;
-	private ScrollViewer? _scrollViewer = null;
+	private bool _isUpdatingLoadStatus;
+	private ScrollViewer? _scrollViewer;
 
 	public WallpaperListView()
 	{
@@ -76,7 +75,7 @@ public partial class WallpaperListView : UserControl
 	{
 		var offset = scrollViewer.Offset.Y; // 垂直偏移量
 		var viewportHeight = scrollViewer.Viewport.Height; // 视口高度
-		var itemHeight = 200; // 每个壁纸项的高度（根据WallpaperView的DesignHeight）
+		const int itemHeight = 200; // 每个壁纸项的高度（根据WallpaperView的DesignHeight）
 
 		// 计算可见项的范围
 		var firstVisibleIndex = Math.Max(0, (int)(offset / itemHeight) - 1); // 减少1个作为缓冲

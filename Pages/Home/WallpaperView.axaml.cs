@@ -49,25 +49,32 @@ public partial class WallpaperView : UserControl
 
 	private async void SetDeskWallpaper_PointerPressed(object? sender, PointerPressedEventArgs e)
 	{
-		DownloadPB.IsVisible = true;
-		var vm = DataContext as WallpaperViewModel;
-		var fileName = vm.ImageSource.Split("/")[^2];
-		var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), fileName);
-		if (!File.Exists(filePath))
+		try
 		{
-			var fullUrl = vm.ImageSource.Replace("/thumb", "/full");
-			await DownloadAsync(fullUrl, filePath);
-		}
-		DownloadPB.IsVisible = false;
+			DownloadPB.IsVisible = true;
+			var vm = DataContext as WallpaperViewModel;
+			var fileName = vm.ImageSource.Split("/")[^2];
+			var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), fileName);
+			if (!File.Exists(filePath))
+			{
+				var fullUrl = vm.ImageSource.Replace("/thumb", "/full");
+				await DownloadAsync(fullUrl, filePath);
+			}
+			DownloadPB.IsVisible = false;
 
-		// 跨平台设置桌面壁纸
-		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-		{
-			SetWindowsWallpaper(filePath);
+			// 跨平台设置桌面壁纸
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			{
+				SetWindowsWallpaper(filePath);
+			}
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+			{
+				await SetLinuxWallpaper(filePath);
+			}
 		}
-		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+		catch (Exception ex)
 		{
-			await SetLinuxWallpaper(filePath);
+			throw; // TODO 处理异常
 		}
 	}
 
@@ -198,14 +205,9 @@ public partial class WallpaperView : UserControl
 				}
 			}
 
-			if (success)
-			{
-				LogHelper.WriteLogAsync($"Linux壁纸设置成功，桌面环境: {desktopEnv}");
-			}
-			else
-			{
-				LogHelper.WriteLogAsync($"Linux壁纸设置失败，桌面环境: {desktopEnv}，错误: {errorMsg}");
-			}
+			LogHelper.WriteLogAsync(
+				success ? $"Linux壁纸设置成功，桌面环境: {desktopEnv}" : $"Linux壁纸设置失败，桌面环境: {desktopEnv}，错误: {errorMsg}"
+			);
 		}
 		catch (Exception ex)
 		{
@@ -407,7 +409,7 @@ for (i=0;i<allDesktops.length;i++) {{
 				}
 				catch
 				{
-					continue;
+					// ignored
 				}
 			}
 

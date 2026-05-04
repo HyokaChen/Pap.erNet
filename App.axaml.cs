@@ -19,16 +19,11 @@ public partial class App : Application
 	/// <summary>
 	/// Gets the <see cref="IServiceProvider"/> instance to resolve application services.
 	/// </summary>
-	public IServiceProvider ServicesProvider { get; }
-
-	public App()
-	{
-		ServicesProvider = ConfigureServices();
-	}
+	public IServiceProvider ServicesProvider { get; } = ConfigureServices();
 
 	public override void Initialize()
 	{
-		this.EnableHotReload();
+		this.UseHotReload();
 		AvaloniaXamlLoader.Load(this);
 	}
 
@@ -70,7 +65,7 @@ public partial class App : Application
 		return services.BuildServiceProvider();
 	}
 
-	private void Exit(object? sender, System.EventArgs e)
+	private void Exit(object? sender, EventArgs e)
 	{
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 		{

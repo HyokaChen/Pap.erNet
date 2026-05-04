@@ -33,14 +33,11 @@ public class WallpaperViewModel(Wallpaper wallpaper) : ViewModelBase
 
 	public string ThumbnailSource => wallpaper.Thumbnail;
 	public string ImageSource => wallpaper.Url;
-	public string Id => wallpaper.Id;
-
-	private bool _isLoad = false;
 
 	public bool IsLoad
 	{
-		get => _isLoad;
-		set => this.RaiseAndSetIfChanged(ref _isLoad, value);
+		get;
+		set => this.RaiseAndSetIfChanged(ref field, value);
 	}
 
 	public string Link => wallpaper.Link;

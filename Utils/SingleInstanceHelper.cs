@@ -37,14 +37,7 @@ namespace Pap.erNet.Utils
 		/// <returns>如果成功获取锁返回 true，否则返回 false（表示已有实例在运行）</returns>
 		public bool TryAcquireLock()
 		{
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-			{
-				return TryAcquireLockWindows();
-			}
-			else
-			{
-				return TryAcquireLockUnix();
-			}
+			return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? TryAcquireLockWindows() : TryAcquireLockUnix();
 		}
 
 		/// <summary>
@@ -158,7 +151,7 @@ namespace Pap.erNet.Utils
 					{
 						var fileHandle = _lockFileStream.SafeFileHandle.DangerousGetHandle();
 						var fd = fileHandle.ToInt32();
-						flock(fd, LOCK_UN);
+						_ = flock(fd, LOCK_UN);
 					}
 
 					_lockFileStream.Close();

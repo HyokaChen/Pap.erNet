@@ -1,11 +1,4 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
@@ -46,56 +39,63 @@ public class ImageLoader
 
 	private static async void OnLoadStatusChanged(Image sender, AvaloniaPropertyChangedEventArgs args)
 	{
-		var loadStatus = args.GetNewValue<bool>();
-		var url = GetSource(sender);
-
-		// Cancel/Add new pending operation
-		var cts = _pendingOperations.AddOrUpdate(
-			sender,
-			new CancellationTokenSource(),
-			(_, y) =>
-			{
-				y.Cancel();
-				return new CancellationTokenSource();
-			}
-		);
-
-		if (!loadStatus || string.IsNullOrEmpty(url))
+		try
 		{
-			_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
-			return;
-		}
+			var loadStatus = args.GetNewValue<bool>();
+			var url = GetSource(sender);
 
-		var bitmap = await Task.Run(
-				async () =>
+			// Cancel/Add new pending operation
+			var cts = _pendingOperations.AddOrUpdate(
+				sender,
+				new CancellationTokenSource(),
+				(_, y) =>
 				{
-					try
-					{
-						// A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
-						// The Bitmap constructor is expensive and cannot be cancelled
-						await Task.Delay(20, cts.Token);
+					y.Cancel();
+					return new CancellationTokenSource();
+				}
+			);
 
-						return await AsyncImageLoader.ProvideImageAsync(url!);
-					}
-					catch (TaskCanceledException)
-					{
-						return null;
-					}
-					catch (Exception ex)
-					{
-						LogHelper.WriteLogAsync(ex.StackTrace);
-						return null;
-					}
-				},
-				cts.Token
-			)
-			.ConfigureAwait(true);
+			if (!loadStatus || string.IsNullOrEmpty(url))
+			{
+				_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
+				return;
+			}
 
-		if (bitmap != null && !cts.Token.IsCancellationRequested)
-			sender.Source = bitmap;
+			var bitmap = await Task.Run(
+					async () =>
+					{
+						try
+						{
+							// A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
+							// The Bitmap constructor is expensive and cannot be cancelled
+							await Task.Delay(20, cts.Token);
 
-		// "It is not guaranteed to be thread safe by ICollection, but ConcurrentDictionary's implementation is. Additionally, we recently exposed this API for .NET 5 as a public ConcurrentDictionary.TryRemove"
-		_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
+							return await AsyncImageLoader.ProvideImageAsync(url!);
+						}
+						catch (TaskCanceledException)
+						{
+							return null;
+						}
+						catch (Exception ex)
+						{
+							LogHelper.WriteLogAsync(ex.StackTrace);
+							return null;
+						}
+					},
+					cts.Token
+				)
+				.ConfigureAwait(true);
+
+			if (bitmap != null && !cts.Token.IsCancellationRequested)
+				sender.Source = bitmap;
+
+			// "It is not guaranteed to be thread safe by ICollection, but ConcurrentDictionary's implementation is. Additionally, we recently exposed this API for .NET 5 as a public ConcurrentDictionary.TryRemove"
+			_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
+		}
+		catch (Exception e)
+		{
+			throw; // TODO 处理异常
+		}
 	}
 
 	private static void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args)

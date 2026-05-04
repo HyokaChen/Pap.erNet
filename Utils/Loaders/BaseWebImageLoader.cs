@@ -1,14 +1,8 @@
-using System;
-using System.Diagnostics;
-using System.IO;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Security;
-using System.Threading.Tasks;
 using Avalonia.Logging;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 
 namespace Pap.erNet.Utils.Loaders;
 
@@ -88,15 +82,12 @@ public class BaseWebImageLoader : IAsyncImageLoader
 	{
 		LogHelper.WriteLogAsync($"Thumb Url::{url}");
 		var client = new HttpClient(
-			new SocketsHttpHandler()
+			new SocketsHttpHandler
 			{
 				UseProxy = false,
 				MaxConnectionsPerServer = 5,
 				AllowAutoRedirect = true,
-				SslOptions = new SslClientAuthenticationOptions()
-				{
-					RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true,
-				},
+				SslOptions = new SslClientAuthenticationOptions() { RemoteCertificateValidationCallback = (_, _, _, _) => true },
 				AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
 			}
 		)
@@ -114,8 +105,8 @@ public class BaseWebImageLoader : IAsyncImageLoader
 		client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
 		client.DefaultRequestHeaders.Host = "c3.wuse.co";
 
-		var maxRetries = 3;
-		var initialDelay = 1000;
+		const int maxRetries = 3;
+		const int initialDelay = 1000;
 		Exception? lastException = null;
 
 		for (var attempt = 0; attempt <= maxRetries; attempt++)
