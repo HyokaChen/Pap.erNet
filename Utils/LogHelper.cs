@@ -53,6 +53,11 @@ namespace Pap.erNet.Utils
 		/// 日志文件存放路径
 		/// </summary>
 		private static string logFilePath = "";
+
+		/// <summary>
+		/// 是否同时输出到控制台
+		/// </summary>
+		private static bool enableConsoleOutput = true;
 		#endregion
 
 		#region 属性
@@ -63,6 +68,15 @@ namespace Pap.erNet.Utils
 		{
 			get { return maxFileSize; }
 			set { maxFileSize = value; }
+		}
+
+		/// <summary>
+		/// 是否同时输出到控制台，默认关闭
+		/// </summary>
+		public static bool EnableConsoleOutput
+		{
+			get { return enableConsoleOutput; }
+			set { enableConsoleOutput = value; }
 		}
 
 		/// <summary>
@@ -263,6 +277,12 @@ namespace Pap.erNet.Utils
 				return;
 			}
 			strLog = strLog.Replace("\n", "\r\n");
+
+			// 输出到控制台
+			if (EnableConsoleOutput)
+			{
+				Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{logType}] {strLog.TrimEnd()}");
+			}
 
 			FileStream? fs = null;
 			try

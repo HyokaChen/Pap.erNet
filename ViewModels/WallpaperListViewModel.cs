@@ -15,6 +15,15 @@ public class WallpaperListViewModel : ViewModelBase
 
 	private ConfiguredCancelableAsyncEnumerable<Wallpaper>.Enumerator? _wallpapersGenerator;
 
+	private async Task SetWallpapersGeneratorAsync(ConfiguredCancelableAsyncEnumerable<Wallpaper>.Enumerator newGenerator)
+	{
+		var oldGenerator = Interlocked.Exchange(ref _wallpapersGenerator, newGenerator);
+		if (oldGenerator.HasValue)
+		{
+			await oldGenerator.Value.DisposeAsync();
+		}
+	}
+
 	private const int NEXT_BATCH = 10;
 
 	private int _isLoading;
@@ -42,8 +51,7 @@ public class WallpaperListViewModel : ViewModelBase
 			{
 				LogHelper.WriteLogAsync("LoadNextDiscoverWallpapersAsync: 开始加载");
 				WallpaperListItems.Clear();
-				await using var wallpapersGenerator = _service.DiscoverItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
-				_wallpapersGenerator = wallpapersGenerator;
+				await SetWallpapersGeneratorAsync(_service.DiscoverItemsAsync().ConfigureAwait(false).GetAsyncEnumerator());
 				await InternalNext();
 			}
 			finally
@@ -68,8 +76,7 @@ public class WallpaperListViewModel : ViewModelBase
 			{
 				LogHelper.WriteLogAsync("LoadNextLatestWallpapersAsync: 开始加载");
 				WallpaperListItems.Clear();
-				await using var wallpapersGenerator = _service.LatestItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
-				_wallpapersGenerator = wallpapersGenerator;
+				await SetWallpapersGeneratorAsync(_service.LatestItemsAsync().ConfigureAwait(false).GetAsyncEnumerator());
 				await InternalNext();
 			}
 			finally
@@ -94,8 +101,7 @@ public class WallpaperListViewModel : ViewModelBase
 			{
 				LogHelper.WriteLogAsync("LoadNextVerticalScreenWallpapersAsync: 开始加载");
 				WallpaperListItems.Clear();
-				await using var wallpapersGenerator = _service.VerticalScreenItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
-				_wallpapersGenerator = wallpapersGenerator;
+				await SetWallpapersGeneratorAsync(_service.VerticalScreenItemsAsync().ConfigureAwait(false).GetAsyncEnumerator());
 				await InternalNext();
 			}
 			finally
@@ -195,8 +201,12 @@ public class WallpaperListViewModel : ViewModelBase
 	private Channel<(int, bool)> LoadStatusChannel { get; } =
 		Channel.CreateBounded<(int, bool)>(new BoundedChannelOptions(10) { FullMode = BoundedChannelFullMode.DropOldest });
 
-	~WallpaperListViewModel()
+	public async ValueTask DisposeAsync()
 	{
-		_wallpapersGenerator?.DisposeAsync();
+		var generator = Interlocked.Exchange(ref _wallpapersGenerator, null);
+		if (generator.HasValue)
+		{
+			await generator.Value.DisposeAsync();
+		}
 	}
 }
