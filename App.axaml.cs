@@ -4,6 +4,7 @@ using Avalonia.Markup.Xaml;
 using HotAvalonia;
 using Microsoft.Extensions.DependencyInjection;
 using Pap.erNet.Pages.Home;
+using Pap.erNet.Utils;
 using Pap.erNet.ViewModels;
 using Pap.erNet.Views;
 
@@ -31,6 +32,21 @@ public partial class App : Application
 	{
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 		{
+			// 在创建主窗口之前，先执行认证流程
+			Task.Run(async () =>
+				{
+					try
+					{
+						var authResult = await AuthService.Instance.AuthenticateAsync();
+						LogHelper.WriteLogAsync($"App: 认证结果 = {authResult}");
+					}
+					catch (Exception ex)
+					{
+						LogHelper.WriteLogAsync($"App: 认证异常 = {ex.Message}");
+					}
+				})
+				.Wait(); // 同步等待认证完成，确保后续请求带有 Token
+
 			desktop.MainWindow = ServicesProvider.GetRequiredService<MainWindow>();
 		}
 

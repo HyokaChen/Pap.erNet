@@ -68,7 +68,7 @@ public class BaseWebImageLoader : IAsyncImageLoader
 		catch (Exception ex)
 		{
 			LogHelper.WriteLogAsync($"Request Error::{ex.Message} >>> {ex.StackTrace}");
-			throw ex;
+			throw;
 		}
 	}
 
