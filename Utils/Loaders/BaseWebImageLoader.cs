@@ -14,6 +14,34 @@ public class BaseWebImageLoader : IAsyncImageLoader
 {
 	private readonly ParametrizedLogger? _logger;
 
+	// 静态共享 HttpClient，复用连接池
+	private static readonly HttpClient SharedClient = new(
+		new SocketsHttpHandler
+		{
+			UseProxy = false,
+			MaxConnectionsPerServer = 10,
+			AllowAutoRedirect = true,
+			SslOptions = new SslClientAuthenticationOptions { RemoteCertificateValidationCallback = (_, _, _, _) => true },
+			AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
+			PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+			EnableMultipleHttp2Connections = true,
+		}
+	)
+	{
+		Timeout = TimeSpan.FromSeconds(60),
+	};
+
+	static BaseWebImageLoader()
+	{
+		SharedClient.DefaultRequestHeaders.UserAgent.ParseAdd("pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
+		SharedClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/avif"));
+		SharedClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/webp"));
+		SharedClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*") { Quality = 0.8 });
+		SharedClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+		SharedClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
+		SharedClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("br"));
+	}
+
 	/// <summary>
 	///     Initializes a new instance with the provided <see cref="HttpClient" />, and specifies whether that
 	///     <see cref="HttpClient" /> should be disposed when this instance is disposed.
@@ -80,30 +108,7 @@ public class BaseWebImageLoader : IAsyncImageLoader
 	/// <returns>Image bytes</returns>
 	protected virtual async Task<byte[]?> LoadDataFromExternalAsync(string url)
 	{
-		LogHelper.WriteLogAsync($"Thumb Url::{url}");
-		var client = new HttpClient(
-			new SocketsHttpHandler
-			{
-				UseProxy = false,
-				MaxConnectionsPerServer = 5,
-				AllowAutoRedirect = true,
-				SslOptions = new SslClientAuthenticationOptions { RemoteCertificateValidationCallback = (_, _, _, _) => true },
-				AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
-			}
-		)
-		{
-			Timeout = TimeSpan.FromSeconds(300),
-		};
-		client.DefaultRequestHeaders.UserAgent.ParseAdd(
-			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
-		);
-		client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/avif"));
-		client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/webp"));
-		// 添加带 q-value 的媒体类型
-		client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*") { Quality = 0.8 });
-		client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
-		client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
-		client.DefaultRequestHeaders.Host = "c3.wuse.co";
+		LogHelper.WriteLogAsync($"[Network] 开始下载: {url}");
 
 		const int maxRetries = 3;
 		const int initialDelay = 1000;
@@ -114,27 +119,43 @@ public class BaseWebImageLoader : IAsyncImageLoader
 			if (attempt > 0)
 			{
 				var delay = (int)(initialDelay * Math.Pow(2, attempt - 1));
+				LogHelper.WriteLogAsync($"[Network] 第 {attempt} 次重试，等待 {delay}ms: {url}");
 				await Task.Delay(delay);
 			}
 
 			try
 			{
-				// 每次循环都重新创建请求和内容
-				using var response = await client.GetAsync(url).ConfigureAwait(false);
+				using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+				using var request = new HttpRequestMessage(HttpMethod.Get, url);
+				request.Headers.Host = "c3.wuse.co";
+
+				using var response = await SharedClient.SendAsync(request, cts.Token).ConfigureAwait(false);
 
 				if (response.IsSuccessStatusCode)
 				{
-					return await response.Content.ReadAsByteArrayAsync();
+					var contentLength = response.Content.Headers.ContentLength;
+					var bytes = await response.Content.ReadAsByteArrayAsync(cts.Token);
+					LogHelper.WriteLogAsync($"[Network] 下载成功: {url}, Content-Length={contentLength}, 实际大小={bytes.Length}");
+					return bytes;
 				}
+				else
+				{
+					LogHelper.WriteLogAsync($"[Network] HTTP 失败: {url}, StatusCode={response.StatusCode}");
+				}
+			}
+			catch (OperationCanceledException)
+			{
+				LogHelper.WriteLogAsync($"[Network] 请求超时/取消: {url}");
+				lastException = new TimeoutException($"请求超时: {url}");
 			}
 			catch (Exception ex)
 			{
 				lastException = ex;
-				LogHelper.WriteLogAsync($"[图片下载重试] 第 {attempt} 次尝试失败: {ex.Message}");
+				LogHelper.WriteLogAsync($"[Network] 第 {attempt} 次尝试失败: {url}, {ex.GetType().Name}: {ex.Message}");
 			}
 		}
 
-		LogHelper.WriteLogAsync($"[图片下载] 所有 {maxRetries + 1} 次尝试均失败，返回 null");
+		LogHelper.WriteLogAsync($"[Network] 所有 {maxRetries + 1} 次尝试均失败: {url}");
 		return null;
 	}
 

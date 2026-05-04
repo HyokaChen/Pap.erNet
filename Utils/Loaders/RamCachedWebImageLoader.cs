@@ -22,11 +22,23 @@ public class RamCachedWebImageLoader : BaseWebImageLoader
 		if (string.IsNullOrEmpty(url))
 			return null;
 
-		var bitmap = await _memoryCache.GetOrAdd(url, LoadAsync).ConfigureAwait(false);
+		// 检查是否已在内存缓存中
+		if (_memoryCache.TryGetValue(url, out var existingTask))
+		{
+			LogHelper.WriteLogAsync($"[MemoryCache] 命中: {url}");
+			var bitmap = await existingTask.ConfigureAwait(false);
+			if (bitmap == null)
+				_memoryCache.TryRemove(url, out _);
+			return bitmap;
+		}
+
+		LogHelper.WriteLogAsync($"[MemoryCache] 未命中，开始加载: {url}");
+		var bitmapTask = _memoryCache.GetOrAdd(url, _ => LoadAsync(url));
+		var bitmap2 = await bitmapTask.ConfigureAwait(false);
 		// If load failed - remove from cache and return
 		// Next load attempt will try to load image again
-		if (bitmap == null)
+		if (bitmap2 == null)
 			_memoryCache.TryRemove(url, out _);
-		return bitmap;
+		return bitmap2;
 	}
 }

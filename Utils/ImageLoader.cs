@@ -27,6 +27,7 @@ public class ImageLoader
 	static ImageLoader()
 	{
 		SourceProperty.Changed.AddClassHandler<Image>(OnSourceChanged);
+		ThumbnailProperty.Changed.AddClassHandler<Image>(OnThumbnailChanged);
 		LoadStatusProperty.Changed.AddClassHandler<Image>(OnLoadStatusChanged);
 	}
 
@@ -35,6 +36,27 @@ public class ImageLoader
 	private static readonly DiskCachedWebImageLoader AsyncImageLoader = new(TempFolder);
 
 	private static readonly ConcurrentDictionary<Image, CancellationTokenSource> PendingOperations = new();
+
+	// 全局信号量，限制同时下载的图片数量，避免服务器拒绝或连接挂起
+	private static readonly SemaphoreSlim DownloadSemaphore = new(3, 3);
+
+	/// <summary>
+	/// 当缩略图数据变化时触发
+	/// 如果当前在视窗内且没有高清图，立即显示缩略图
+	/// </summary>
+	private static void OnThumbnailChanged(Image sender, AvaloniaPropertyChangedEventArgs args)
+	{
+		var thumbnail = args.GetNewValue<string?>();
+		if (string.IsNullOrEmpty(thumbnail))
+			return;
+
+		// 如果当前在视窗内，立即显示缩略图
+		if (GetLoadStatus(sender))
+		{
+			LogHelper.WriteLogAsync("OnThumbnailChanged: 缩略图数据到达，立即显示");
+			ShowThumbnail(sender, thumbnail);
+		}
+	}
 
 	private static void OnLoadStatusChanged(Image sender, AvaloniaPropertyChangedEventArgs args)
 	{
@@ -51,7 +73,6 @@ public class ImageLoader
 			// 离开视窗或没有 URL，显示缩略图
 			if (loadStatus && string.IsNullOrEmpty(url))
 			{
-				// 在视窗内但没有 URL，也尝试显示缩略图
 				ShowThumbnail(sender);
 			}
 			else if (!loadStatus)
@@ -61,7 +82,7 @@ public class ImageLoader
 			return;
 		}
 
-		// 进入视窗：先立即显示缩略图
+		// 进入视窗：先立即显示缩略图（如果已有缩略图数据）
 		ShowThumbnail(sender);
 
 		// 然后启动异步加载高清图
@@ -95,44 +116,70 @@ public class ImageLoader
 	{
 		try
 		{
-			// 在后台线程加载图片
-			var bitmap = await Task.Run(
-					async () =>
-					{
-						try
-						{
-							return await AsyncImageLoader.ProvideImageAsync(url);
-						}
-						catch (Exception ex)
-						{
-							LogHelper.WriteLogAsync($"[图片加载] 失败: {url}, {ex.Message}");
-							return null;
-						}
-					},
-					cancellationToken
-				)
-				.ConfigureAwait(false);
+			LogHelper.WriteLogAsync($"[图片加载] 开始: {url}");
 
-			if (cancellationToken.IsCancellationRequested)
-				return;
+			// 使用信号量限制并发下载数量
+			LogHelper.WriteLogAsync($"[图片加载] 等待下载槽位: {url}");
+			await DownloadSemaphore.WaitAsync(cancellationToken);
+			LogHelper.WriteLogAsync($"[图片加载] 获得下载槽位: {url}");
 
-			if (bitmap != null)
+			try
 			{
-				// 回到 UI 线程设置图片
-				await Dispatcher.UIThread.InvokeAsync(() =>
+				// 在后台线程加载图片
+				var bitmap = await Task.Run(
+						async () =>
+						{
+							try
+							{
+								return await AsyncImageLoader.ProvideImageAsync(url);
+							}
+							catch (Exception ex)
+							{
+								LogHelper.WriteLogAsync($"[图片加载] ProvideImageAsync 失败: {url}, {ex.Message}");
+								return null;
+							}
+						},
+						cancellationToken
+					)
+					.ConfigureAwait(false);
+
+				if (cancellationToken.IsCancellationRequested)
 				{
-					// 再次检查是否仍在视窗内且没有被新的加载任务覆盖
-					if (GetLoadStatus(image) && !cancellationToken.IsCancellationRequested)
+					LogHelper.WriteLogAsync($"[图片加载] 取消(加载完成后): {url}");
+					return;
+				}
+
+				if (bitmap != null)
+				{
+					// 回到 UI 线程设置图片
+					await Dispatcher.UIThread.InvokeAsync(() =>
 					{
-						image.Source = bitmap;
-						LogHelper.WriteLogAsync($"[图片加载] 成功: {url}");
-					}
-				});
+						// 再次检查是否仍在视窗内且没有被新的加载任务覆盖
+						if (GetLoadStatus(image) && !cancellationToken.IsCancellationRequested)
+						{
+							image.Source = bitmap;
+							LogHelper.WriteLogAsync($"[图片加载] 成功设置到UI: {url}");
+						}
+						else
+						{
+							LogHelper.WriteLogAsync($"[图片加载] 加载完成但已离开视窗或取消: {url}, LoadStatus={GetLoadStatus(image)}");
+						}
+					});
+				}
+				else
+				{
+					LogHelper.WriteLogAsync($"[图片加载] bitmap 为 null: {url}");
+				}
+			}
+			finally
+			{
+				DownloadSemaphore.Release();
+				LogHelper.WriteLogAsync($"[图片加载] 释放下载槽位: {url}");
 			}
 		}
 		catch (OperationCanceledException)
 		{
-			// 正常取消，忽略
+			LogHelper.WriteLogAsync($"[图片加载] 取消: {url}");
 		}
 		catch (Exception ex)
 		{
@@ -158,19 +205,30 @@ public class ImageLoader
 
 	/// <summary>
 	/// 显示缩略图（从 Thumbnail 附加属性获取 base64 数据）
-	/// 在 UI 线程同步执行
 	/// </summary>
 	private static void ShowThumbnail(Image sender)
 	{
 		var thumbnail = GetThumbnail(sender);
+		ShowThumbnail(sender, thumbnail);
+	}
+
+	/// <summary>
+	/// 显示缩略图（传入缩略图数据）
+	/// </summary>
+	private static void ShowThumbnail(Image sender, string? thumbnail)
+	{
 		if (string.IsNullOrEmpty(thumbnail))
+		{
+			LogHelper.WriteLogAsync("[缩略图] 数据为空，跳过显示");
 			return;
+		}
 
 		try
 		{
 			var arr = Convert.FromBase64String(thumbnail.Replace("data:image/webp;base64,", ""));
 			using var ms = new MemoryStream(arr);
 			sender.Source = new Bitmap(ms);
+			LogHelper.WriteLogAsync("[缩略图] 显示成功");
 		}
 		catch (Exception ex)
 		{
