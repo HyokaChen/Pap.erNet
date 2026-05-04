@@ -17,8 +17,8 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader
 		_cacheFolder = cacheFolder;
 	}
 
-	public DiskCachedWebImageLoader(HttpClient httpClient, bool disposeHttpClient, string cacheFolder = "Cache/Images/")
-		: base()
+	public DiskCachedWebImageLoader(IHttpClientFactory httpClientFactory, string cacheFolder = "Cache/Images/")
+		: base(httpClientFactory)
 	{
 		_cacheFolder = cacheFolder;
 	}

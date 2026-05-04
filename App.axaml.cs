@@ -5,6 +5,7 @@ using HotAvalonia;
 using Microsoft.Extensions.DependencyInjection;
 using Pap.erNet.Pages.Home;
 using Pap.erNet.Utils;
+using Pap.erNet.Utils.Loaders;
 using Pap.erNet.ViewModels;
 using Pap.erNet.Views;
 
@@ -79,6 +80,42 @@ public partial class App : Application
 	private static IServiceProvider ConfigureServices()
 	{
 		var services = new ServiceCollection();
+
+		// 注册 HttpClientFactory，配置图片下载专用的 HttpClient
+		services
+			.AddHttpClient(ImageHttpClientNames.ThumbImage)
+			.ConfigureHttpClient(client =>
+			{
+				client.Timeout = TimeSpan.FromSeconds(60);
+				client.DefaultRequestHeaders.UserAgent.ParseAdd("pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
+				client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/avif"));
+				client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/webp"));
+				client.DefaultRequestHeaders.Accept.Add(
+					new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*") { Quality = 0.8 }
+				);
+				client.DefaultRequestHeaders.AcceptEncoding.Add(new System.Net.Http.Headers.StringWithQualityHeaderValue("gzip"));
+				client.DefaultRequestHeaders.AcceptEncoding.Add(new System.Net.Http.Headers.StringWithQualityHeaderValue("deflate"));
+				client.DefaultRequestHeaders.AcceptEncoding.Add(new System.Net.Http.Headers.StringWithQualityHeaderValue("br"));
+			})
+			.ConfigurePrimaryHttpMessageHandler(() =>
+				new SocketsHttpHandler
+				{
+					UseProxy = false,
+					MaxConnectionsPerServer = 2,
+					AllowAutoRedirect = true,
+					SslOptions = new System.Net.Security.SslClientAuthenticationOptions
+					{
+						RemoteCertificateValidationCallback = (_, _, _, _) => true,
+					},
+					AutomaticDecompression =
+						System.Net.DecompressionMethods.GZip
+						| System.Net.DecompressionMethods.Deflate
+						| System.Net.DecompressionMethods.Brotli,
+					PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+					PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+				}
+			)
+			.SetHandlerLifetime(TimeSpan.FromMinutes(10));
 
 		services.AddSingleton<MainWindow>();
 		services.AddTransient<WallpaperView>();

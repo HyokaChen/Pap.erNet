@@ -16,6 +16,10 @@ public class RamCachedWebImageLoader : BaseWebImageLoader
 		: base() { }
 
 	/// <inheritdoc />
+	public RamCachedWebImageLoader(IHttpClientFactory httpClientFactory)
+		: base(httpClientFactory) { }
+
+	/// <inheritdoc />
 	public override async Task<Bitmap?> ProvideImageAsync(string url)
 	{
 		// Null check to prevent ArgumentNullException in ConcurrentDictionary.GetOrAdd

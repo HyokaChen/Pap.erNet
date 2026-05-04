@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Security;
+using Avalonia;
 using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 
@@ -13,18 +14,50 @@ namespace Pap.erNet.Utils.Loaders;
 public class BaseWebImageLoader : IAsyncImageLoader
 {
 	private readonly ParametrizedLogger? _logger;
+	private readonly IHttpClientFactory? _httpClientFactory;
 
-	// 静态共享 HttpClient，复用连接池
-	private static readonly HttpClient SharedClient = new(
+	public BaseWebImageLoader()
+	{
+		_logger = Logger.TryGet(LogEventLevel.Information, "AsyncImageLoader");
+	}
+
+	public BaseWebImageLoader(IHttpClientFactory httpClientFactory)
+	{
+		_httpClientFactory = httpClientFactory;
+		_logger = Logger.TryGet(LogEventLevel.Information, "AsyncImageLoader");
+	}
+
+	/// <summary>
+	///     获取 HttpClient，优先从 Factory 获取，否则使用静态回退
+	/// </summary>
+	private HttpClient GetClient()
+	{
+		if (_httpClientFactory != null)
+		{
+			return _httpClientFactory.CreateClient(ImageHttpClientNames.ThumbImage);
+		}
+
+		// 回退：直接从 App 的 DI 容器获取
+		var app = Application.Current as App;
+		if (app?.ServicesProvider.GetService(typeof(IHttpClientFactory)) is IHttpClientFactory factory)
+		{
+			return factory.CreateClient(ImageHttpClientNames.ThumbImage);
+		}
+
+		// 最终回退：静态 HttpClient
+		return FallbackClient;
+	}
+
+	// 回退用的静态 HttpClient（仅当 DI 不可用时使用）
+	private static readonly HttpClient FallbackClient = new(
 		new SocketsHttpHandler
 		{
 			UseProxy = false,
-			MaxConnectionsPerServer = 10,
+			MaxConnectionsPerServer = 2,
 			AllowAutoRedirect = true,
 			SslOptions = new SslClientAuthenticationOptions { RemoteCertificateValidationCallback = (_, _, _, _) => true },
 			AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
 			PooledConnectionLifetime = TimeSpan.FromMinutes(5),
-			EnableMultipleHttp2Connections = true,
 		}
 	)
 	{
@@ -33,27 +66,13 @@ public class BaseWebImageLoader : IAsyncImageLoader
 
 	static BaseWebImageLoader()
 	{
-		SharedClient.DefaultRequestHeaders.UserAgent.ParseAdd("pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
-		SharedClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/avif"));
-		SharedClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/webp"));
-		SharedClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*") { Quality = 0.8 });
-		SharedClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
-		SharedClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
-		SharedClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("br"));
-	}
-
-	/// <summary>
-	///     Initializes a new instance with the provided <see cref="HttpClient" />, and specifies whether that
-	///     <see cref="HttpClient" /> should be disposed when this instance is disposed.
-	/// </summary>
-	/// <param name="httpClient">The HttpMessageHandler responsible for processing the HTTP response messages.</param>
-	/// <param name="disposeHttpClient">
-	///     true if the inner handler should be disposed of by Dispose; false if you intend to
-	///     reuse the HttpClient.
-	/// </param>
-	public BaseWebImageLoader()
-	{
-		_logger = Logger.TryGet(LogEventLevel.Information, "AsyncImageLoader");
+		FallbackClient.DefaultRequestHeaders.UserAgent.ParseAdd("pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
+		FallbackClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/avif"));
+		FallbackClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/webp"));
+		FallbackClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*") { Quality = 0.8 });
+		FallbackClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+		FallbackClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
+		FallbackClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("br"));
 	}
 
 	/// <inheritdoc />
@@ -110,9 +129,10 @@ public class BaseWebImageLoader : IAsyncImageLoader
 	{
 		LogHelper.WriteLogAsync($"[Network] 开始下载: {url}");
 
+		var client = GetClient();
+
 		const int maxRetries = 3;
 		const int initialDelay = 1000;
-		Exception? lastException = null;
 
 		for (var attempt = 0; attempt <= maxRetries; attempt++)
 		{
@@ -125,32 +145,54 @@ public class BaseWebImageLoader : IAsyncImageLoader
 
 			try
 			{
-				using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+				// 阶段1：发送请求并获取响应头（15秒超时）
+				using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 				using var request = new HttpRequestMessage(HttpMethod.Get, url);
 				request.Headers.Host = "c3.wuse.co";
 
-				using var response = await SharedClient.SendAsync(request, cts.Token).ConfigureAwait(false);
+				LogHelper.WriteLogAsync($"[Network] 发送请求: {url}");
+				using var response = await client
+					.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token)
+					.ConfigureAwait(false);
+				LogHelper.WriteLogAsync($"[Network] 收到响应: {url}, Status={response.StatusCode}");
 
-				if (response.IsSuccessStatusCode)
+				if (!response.IsSuccessStatusCode)
 				{
-					var contentLength = response.Content.Headers.ContentLength;
-					var bytes = await response.Content.ReadAsByteArrayAsync(cts.Token);
-					LogHelper.WriteLogAsync($"[Network] 下载成功: {url}, Content-Length={contentLength}, 实际大小={bytes.Length}");
-					return bytes;
+					LogHelper.WriteLogAsync($"[Network] HTTP 失败: {url}, StatusCode={response.StatusCode}");
+					continue;
+				}
+
+				// 阶段2：读取响应体（单独给60秒超时，避免内容读取超时）
+				var contentLength = response.Content.Headers.ContentLength;
+				LogHelper.WriteLogAsync($"[Network] 开始读取内容: {url}, Content-Length={contentLength}");
+
+				// 使用流式读取 + 手动超时控制，避免大文件或慢速网络导致 ReadAsByteArrayAsync 超时
+				using var contentCts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+				await using var responseStream = await response.Content.ReadAsStreamAsync(contentCts.Token).ConfigureAwait(false);
+				using var ms = new MemoryStream();
+				var buffer = new byte[8192];
+				int read;
+				while ((read = await responseStream.ReadAsync(buffer, contentCts.Token).ConfigureAwait(false)) > 0)
+				{
+					await ms.WriteAsync(buffer.AsMemory(0, read), contentCts.Token).ConfigureAwait(false);
+				}
+				var bytes = ms.ToArray();
+				LogHelper.WriteLogAsync($"[Network] 下载成功: {url}, Content-Length={contentLength}, 实际大小={bytes.Length}");
+				return bytes;
+			}
+			catch (OperationCanceledException ex)
+			{
+				if (ex.CancellationToken.IsCancellationRequested)
+				{
+					LogHelper.WriteLogAsync($"[Network] 请求超时/取消: {url}");
 				}
 				else
 				{
-					LogHelper.WriteLogAsync($"[Network] HTTP 失败: {url}, StatusCode={response.StatusCode}");
+					LogHelper.WriteLogAsync($"[Network] 请求被取消(非超时): {url}");
 				}
-			}
-			catch (OperationCanceledException)
-			{
-				LogHelper.WriteLogAsync($"[Network] 请求超时/取消: {url}");
-				lastException = new TimeoutException($"请求超时: {url}");
 			}
 			catch (Exception ex)
 			{
-				lastException = ex;
 				LogHelper.WriteLogAsync($"[Network] 第 {attempt} 次尝试失败: {url}, {ex.GetType().Name}: {ex.Message}");
 			}
 		}

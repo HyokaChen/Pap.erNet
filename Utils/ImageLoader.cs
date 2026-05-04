@@ -33,12 +33,21 @@ public class ImageLoader
 
 	private static readonly string TempFolder = Path.Combine(Path.GetTempPath(), "Pap.erNet");
 
-	private static readonly DiskCachedWebImageLoader AsyncImageLoader = new(TempFolder);
+	private static DiskCachedWebImageLoader? _asyncImageLoader;
+
+	private static DiskCachedWebImageLoader AsyncImageLoader => _asyncImageLoader ??= CreateImageLoader();
+
+	private static DiskCachedWebImageLoader CreateImageLoader()
+	{
+		var app = Application.Current as App;
+		var factory = app?.ServicesProvider.GetService(typeof(IHttpClientFactory)) as IHttpClientFactory;
+		return factory != null ? new DiskCachedWebImageLoader(factory, TempFolder) : new DiskCachedWebImageLoader(TempFolder);
+	}
 
 	private static readonly ConcurrentDictionary<Image, CancellationTokenSource> PendingOperations = new();
 
-	// 全局信号量，限制同时下载的图片数量，避免服务器拒绝或连接挂起
-	private static readonly SemaphoreSlim DownloadSemaphore = new(3, 3);
+	// 全局信号量，限制同时下载的图片数量为1，避免服务器对并发连接限流
+	private static readonly SemaphoreSlim DownloadSemaphore = new(1, 1);
 
 	/// <summary>
 	/// 当缩略图数据变化时触发

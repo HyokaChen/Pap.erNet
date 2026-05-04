@@ -70,6 +70,7 @@
 		<PackageReference Condition="$(DefineConstants.Contains(ENABLE_XAML_HOT_RELOAD))" Include="HotAvalonia" Version="3.1.0" />
 		<PackageReference Include="HotAvalonia.Extensions" Version="3.1.0" PrivateAssets="All" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
 		<PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
 	</ItemGroup>
 </Project>
