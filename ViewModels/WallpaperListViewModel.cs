@@ -15,6 +15,7 @@ public class WallpaperListViewModel : ViewModelBase
 
 	private ConfiguredCancelableAsyncEnumerable<Wallpaper>.Enumerator? _wallpapersGenerator;
 
+	// TODO: 现在很有问题了，直接加载不出来任何数据了，且log输出都是错的。
 	private async Task SetWallpapersGeneratorAsync(ConfiguredCancelableAsyncEnumerable<Wallpaper>.Enumerator newGenerator)
 	{
 		var oldGenerator = Interlocked.Exchange(ref _wallpapersGenerator, newGenerator);
