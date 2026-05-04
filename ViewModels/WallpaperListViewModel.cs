@@ -1,11 +1,8 @@
 using System.Collections.ObjectModel;
-using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
-using System.Threading.Channels;
 using Pap.erNet.Models;
 using Pap.erNet.Services;
 using Pap.erNet.Utils;
-using ReactiveUI;
 
 namespace Pap.erNet.ViewModels;
 
@@ -23,10 +20,7 @@ public class WallpaperListViewModel : ViewModelBase
 
 	public event Action? BatchAddingCompleted;
 
-	public WallpaperListViewModel()
-	{
-		RxApp.TaskpoolScheduler.Schedule(SubscribeLoadStatus);
-	}
+	public WallpaperListViewModel() { }
 
 	public void LoadNextDiscoverWallpapersAsync()
 	{
@@ -151,49 +145,25 @@ public class WallpaperListViewModel : ViewModelBase
 
 	public void LoadNextStatusAsync(int startIdx)
 	{
-		Task.Run(async () =>
+		Avalonia.Threading.Dispatcher.UIThread.Post(() =>
 		{
-			await LoadStatusChannel.Writer.WriteAsync((startIdx, true));
+			if (startIdx < WallpaperListItems.Count)
+				WallpaperListItems[startIdx].IsLoad = true;
 		});
 	}
 
 	public void UnLoadNextStatusAsync(int startIdx)
 	{
-		Task.Run(async () =>
+		Avalonia.Threading.Dispatcher.UIThread.Post(() =>
 		{
-			await LoadStatusChannel.Writer.WriteAsync((startIdx, false));
+			if (startIdx < WallpaperListItems.Count)
+				WallpaperListItems[startIdx].IsLoad = false;
 		});
-	}
-
-	private async void SubscribeLoadStatus()
-	{
-		try
-		{
-			var reader = LoadStatusChannel.Reader;
-			while (await reader.WaitToReadAsync())
-			{
-				if (reader.TryRead(out var itemIndex))
-				{
-					var (idx, status) = itemIndex;
-					if (idx < WallpaperListItems.Count)
-						WallpaperListItems[idx].IsLoad = status;
-					else
-						LogHelper.WriteLogAsync($"滚动太快了！{itemIndex}");
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			throw; // TODO 处理异常
-		}
 	}
 
 	public ObservableCollection<WallpaperViewModel> WallpaperListItems { get; set; } = [];
 
 	private readonly Nito.AsyncEx.AsyncLock _mutex = new();
-
-	private Channel<(int, bool)> LoadStatusChannel { get; } =
-		Channel.CreateBounded<(int, bool)>(new BoundedChannelOptions(10) { FullMode = BoundedChannelFullMode.DropOldest });
 
 	private async Task DisposeGeneratorAsync()
 	{

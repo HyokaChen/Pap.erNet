@@ -44,6 +44,8 @@ public class ImageLoader
 			var loadStatus = args.GetNewValue<bool>();
 			var url = GetSource(sender);
 
+			LogHelper.WriteLogAsync($"OnLoadStatusChanged: loadStatus={loadStatus}, url={(string.IsNullOrEmpty(url) ? "(null)" : url)}");
+
 			// Cancel/Add new pending operation
 			var cts = _pendingOperations.AddOrUpdate(
 				sender,
@@ -55,12 +57,41 @@ public class ImageLoader
 				}
 			);
 
-			if (!loadStatus || string.IsNullOrEmpty(url))
+			if (!loadStatus)
+			{
+				// 图片离开视窗，取消加载并恢复缩略图
+				_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
+				RestoreThumbnail(sender);
+				return;
+			}
+
+			if (string.IsNullOrEmpty(url))
 			{
 				_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
 				return;
 			}
 
+			// 加载图片，如果失败且仍在视窗内则自动重试
+			await LoadWithRetryAsync(sender, url!, cts);
+		}
+		catch (Exception e)
+		{
+			throw; // TODO 处理异常
+		}
+	}
+
+	/// <summary>
+	///     在视窗区域内反复重试加载图片，直到成功或离开视窗。
+	///     每次失败后延迟递增时间再重试，避免频繁请求。
+	/// </summary>
+	private static async Task LoadWithRetryAsync(Image sender, string url, CancellationTokenSource cts)
+	{
+		const int initialRetryDelayMs = 2000; // 初始重试延迟 2 秒
+		const int maxRetryDelayMs = 30000; // 最大重试延迟 30 秒
+		var currentDelayMs = initialRetryDelayMs;
+
+		while (!cts.Token.IsCancellationRequested)
+		{
 			var bitmap = await Task.Run(
 					async () =>
 					{
@@ -70,7 +101,7 @@ public class ImageLoader
 							// The Bitmap constructor is expensive and cannot be cancelled
 							await Task.Delay(20, cts.Token);
 
-							return await AsyncImageLoader.ProvideImageAsync(url!);
+							return await AsyncImageLoader.ProvideImageAsync(url);
 						}
 						catch (TaskCanceledException)
 						{
@@ -86,27 +117,87 @@ public class ImageLoader
 				)
 				.ConfigureAwait(true);
 
-			if (bitmap != null && !cts.Token.IsCancellationRequested)
-				sender.Source = bitmap;
+			if (cts.Token.IsCancellationRequested)
+				break;
 
-			// "It is not guaranteed to be thread safe by ICollection, but ConcurrentDictionary's implementation is. Additionally, we recently exposed this API for .NET 5 as a public ConcurrentDictionary.TryRemove"
-			_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
+			if (bitmap != null)
+			{
+				sender.Source = bitmap;
+				break;
+			}
+
+			// 加载失败，检查是否仍在视窗区域内（LoadStatus 为 true）
+			if (!GetLoadStatus(sender))
+				break;
+
+			// 等待递增延迟后重试
+			try
+			{
+				await Task.Delay(currentDelayMs, cts.Token);
+			}
+			catch (TaskCanceledException)
+			{
+				break;
+			}
+
+			// 递增延迟，但不超过最大值
+			currentDelayMs = Math.Min(currentDelayMs * 2, maxRetryDelayMs);
 		}
-		catch (Exception e)
-		{
-			throw; // TODO 处理异常
-		}
+
+		// "It is not guaranteed to be thread safe by ICollection, but ConcurrentDictionary's implementation is. Additionally, we recently exposed this API for .NET 5 as a public ConcurrentDictionary.TryRemove"
+		_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
 	}
 
 	private static void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args)
 	{
-		// TODO: when in the visual windows, then request the thumb url.
-		var thumbnail = GetThumbnail(sender);
-		if (thumbnail != null)
+		// Source 变化时，如果 LoadStatus 为 true（在视窗内），直接加载新图片
+		// 否则显示缩略图
+		if (GetLoadStatus(sender))
 		{
-			var arr = Convert.FromBase64String(thumbnail.Replace("data:image/webp;base64,", ""));
-			using var ms = new MemoryStream(arr);
-			sender.Source = new Bitmap(ms);
+			// 在视窗内，LoadStatus 属性变化会触发 OnLoadStatusChanged
+			// 这里需要手动触发一次加载
+			var url = args.GetNewValue<string?>();
+			if (!string.IsNullOrEmpty(url))
+			{
+				var cts = _pendingOperations.AddOrUpdate(
+					sender,
+					new CancellationTokenSource(),
+					(_, y) =>
+					{
+						y.Cancel();
+						return new CancellationTokenSource();
+					}
+				);
+
+				// 不 await，fire-and-forget 加载
+				_ = LoadWithRetryAsync(sender, url!, cts);
+			}
+		}
+		else
+		{
+			// 不在视窗内，显示缩略图
+			RestoreThumbnail(sender);
+		}
+	}
+
+	/// <summary>
+	///     恢复显示缩略图。当图片离开视窗或加载被取消时调用。
+	/// </summary>
+	private static void RestoreThumbnail(Image sender)
+	{
+		var thumbnail = GetThumbnail(sender);
+		if (!string.IsNullOrEmpty(thumbnail))
+		{
+			try
+			{
+				var arr = Convert.FromBase64String(thumbnail.Replace("data:image/webp;base64,", ""));
+				using var ms = new MemoryStream(arr);
+				sender.Source = new Bitmap(ms);
+			}
+			catch (Exception)
+			{
+				// 缩略图解码失败，忽略
+			}
 		}
 	}
 

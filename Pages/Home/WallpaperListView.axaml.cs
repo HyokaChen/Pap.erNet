@@ -1,4 +1,6 @@
 using Avalonia.Controls;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Pap.erNet.Utils;
 using Pap.erNet.ViewModels;
 
@@ -25,10 +27,30 @@ public partial class WallpaperListView : UserControl
 
 	private void OnBatchAddingCompleted()
 	{
-		// 批量添加完成后，手动触发一次加载状态更新
-		if (_scrollViewer != null && DataContext is WallpaperListViewModel vm)
+		// 批量添加完成后，延迟一帧再更新加载状态，确保布局已完成
+		if (DataContext is WallpaperListViewModel vm)
 		{
-			UpdateLoadStatus(_scrollViewer, vm);
+			LogHelper.WriteLogAsync("OnBatchAddingCompleted: 批量添加完成，准备更新加载状态");
+
+			Dispatcher.UIThread.Post(() =>
+			{
+				// 如果 ScrollViewer 还没有引用，尝试从控件树中查找
+				_scrollViewer ??=
+					this.FindControl<ScrollViewer>("WallpaperListIC")
+					?? this.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault();
+
+				if (_scrollViewer != null)
+				{
+					LogHelper.WriteLogAsync(
+						$"OnBatchAddingCompleted: 找到 ScrollViewer，offset={_scrollViewer.Offset.Y}, viewport={_scrollViewer.Viewport.Height}"
+					);
+					UpdateLoadStatus(_scrollViewer, vm);
+				}
+				else
+				{
+					LogHelper.WriteLogAsync("OnBatchAddingCompleted: 无法找到 ScrollViewer");
+				}
+			});
 		}
 	}
 
@@ -39,7 +61,7 @@ public partial class WallpaperListView : UserControl
 		if (DataContext is not WallpaperListViewModel vm)
 			return;
 
-		// 保存 ScrollViewer 引用
+		// 始终保存 ScrollViewer 引用，即使在批量添加期间也需要
 		_scrollViewer = scrollViewer;
 
 		// 如果列表为空，直接返回
@@ -51,6 +73,7 @@ public partial class WallpaperListView : UserControl
 			return;
 
 		// 如果正在批量添加项目，跳过处理，等批量添加完成后再处理
+		// 但 ScrollViewer 引用已经保存了
 		if (vm.IsBatchAdding)
 		{
 			LogHelper.WriteLogAsync("ScrollChanged: 正在批量添加，跳过处理");
