@@ -16,17 +16,25 @@ public class WallpaperListViewModel : ViewModelBase
 
 	private int _isLoading;
 
+	/// <summary>
+	/// 当前分类的 ListId，用于从接口获取对应的壁纸数据
+	/// </summary>
+	public string ListId { get; set; } = string.Empty;
+
 	public bool IsBatchAdding { get; private set; }
 
 	public event Action? BatchAddingCompleted;
 
 	public WallpaperListViewModel() { }
 
-	public void LoadNextDiscoverWallpapersAsync()
+	/// <summary>
+	/// 加载指定分类的壁纸（通用方法，替代原来的三个独立方法）
+	/// </summary>
+	public void LoadWallpapersAsync()
 	{
 		if (Interlocked.CompareExchange(ref _isLoading, 1, 0) != 0)
 		{
-			LogHelper.WriteLogAsync("LoadNextDiscoverWallpapersAsync: 已经在加载中，跳过");
+			LogHelper.WriteLogAsync("LoadWallpapersAsync: 已经在加载中，跳过");
 			return;
 		}
 
@@ -34,68 +42,16 @@ public class WallpaperListViewModel : ViewModelBase
 		{
 			try
 			{
-				LogHelper.WriteLogAsync("LoadNextDiscoverWallpapersAsync: 开始加载");
+				LogHelper.WriteLogAsync($"LoadWallpapersAsync: 开始加载, ListId={ListId}");
 				WallpaperListItems.Clear();
 				await DisposeGeneratorAsync();
-				_wallpapersGenerator = _service.DiscoverItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
+				_wallpapersGenerator = _service.GetWallpapersAsync(ListId).ConfigureAwait(false).GetAsyncEnumerator();
 				await InternalNext();
 			}
 			finally
 			{
 				Interlocked.Exchange(ref _isLoading, 0);
-				LogHelper.WriteLogAsync("LoadNextDiscoverWallpapersAsync: 加载完成");
-			}
-		});
-	}
-
-	public void LoadNextLatestWallpapersAsync()
-	{
-		if (Interlocked.CompareExchange(ref _isLoading, 1, 0) != 0)
-		{
-			LogHelper.WriteLogAsync("LoadNextLatestWallpapersAsync: 已经在加载中，跳过");
-			return;
-		}
-
-		Task.Run(async () =>
-		{
-			try
-			{
-				LogHelper.WriteLogAsync("LoadNextLatestWallpapersAsync: 开始加载");
-				WallpaperListItems.Clear();
-				await DisposeGeneratorAsync();
-				_wallpapersGenerator = _service.LatestItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
-				await InternalNext();
-			}
-			finally
-			{
-				Interlocked.Exchange(ref _isLoading, 0);
-				LogHelper.WriteLogAsync("LoadNextLatestWallpapersAsync: 加载完成");
-			}
-		});
-	}
-
-	public void LoadNextVerticalScreenWallpapersAsync()
-	{
-		if (Interlocked.CompareExchange(ref _isLoading, 1, 0) != 0)
-		{
-			LogHelper.WriteLogAsync("LoadNextVerticalScreenWallpapersAsync: 已经在加载中，跳过");
-			return;
-		}
-
-		Task.Run(async () =>
-		{
-			try
-			{
-				LogHelper.WriteLogAsync("LoadNextVerticalScreenWallpapersAsync: 开始加载");
-				WallpaperListItems.Clear();
-				await DisposeGeneratorAsync();
-				_wallpapersGenerator = _service.VerticalScreenItemsAsync().ConfigureAwait(false).GetAsyncEnumerator();
-				await InternalNext();
-			}
-			finally
-			{
-				Interlocked.Exchange(ref _isLoading, 0);
-				LogHelper.WriteLogAsync("LoadNextVerticalScreenWallpapersAsync: 加载完成");
+				LogHelper.WriteLogAsync($"LoadWallpapersAsync: 加载完成, ListId={ListId}");
 			}
 		});
 	}
@@ -128,7 +84,7 @@ public class WallpaperListViewModel : ViewModelBase
 					}
 					else
 					{
-						LogHelper.WriteLogAsync($"InternalNext MoveNextAsync 返回 false，没有更多数据");
+						LogHelper.WriteLogAsync("InternalNext MoveNextAsync 返回 false，没有更多数据");
 						break;
 					}
 				}

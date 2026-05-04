@@ -27,14 +27,13 @@ public partial class WallpaperListView : UserControl
 
 	private void OnBatchAddingCompleted()
 	{
-		// 批量添加完成后，延迟一帧再更新加载状态，确保布局已完成
+		// 批量添加完成后，更新加载状态
 		if (DataContext is WallpaperListViewModel vm)
 		{
 			LogHelper.WriteLogAsync("OnBatchAddingCompleted: 批量添加完成，准备更新加载状态");
 
 			Dispatcher.UIThread.Post(() =>
 			{
-				// 如果 ScrollViewer 还没有引用，尝试从控件树中查找
 				_scrollViewer ??=
 					this.FindControl<ScrollViewer>("WallpaperListIC")
 					?? this.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault();
@@ -61,7 +60,7 @@ public partial class WallpaperListView : UserControl
 		if (DataContext is not WallpaperListViewModel vm)
 			return;
 
-		// 始终保存 ScrollViewer 引用，即使在批量添加期间也需要
+		// 始终保存 ScrollViewer 引用
 		_scrollViewer = scrollViewer;
 
 		// 如果列表为空，直接返回
@@ -72,15 +71,12 @@ public partial class WallpaperListView : UserControl
 		if (_isUpdatingLoadStatus)
 			return;
 
-		// 如果正在批量添加项目，跳过处理，等批量添加完成后再处理
-		// 但 ScrollViewer 引用已经保存了
-		if (vm.IsBatchAdding)
-		{
-			LogHelper.WriteLogAsync("ScrollChanged: 正在批量添加，跳过处理");
-			return;
-		}
-
+		// 即使在批量添加期间，也要更新可见项的加载状态
 		UpdateLoadStatus(scrollViewer, vm);
+
+		// 只有不在批量添加期间才处理加载更多
+		if (vm.IsBatchAdding)
+			return;
 
 		var offset = scrollViewer.Offset.Y; // 垂直偏移量
 		var viewportHeight = scrollViewer.Viewport.Height; // 视口高度

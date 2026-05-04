@@ -9,13 +9,16 @@ namespace Pap.erNet.Services;
 
 public class WallpaperListService
 {
-	public async IAsyncEnumerable<Wallpaper> DiscoverItemsAsync()
+	/// <summary>
+	/// 根据 listId 获取壁纸列表（通用方法，替代原来的三个独立方法）
+	/// </summary>
+	public async IAsyncEnumerable<Wallpaper> GetWallpapersAsync(string listId)
 	{
-		var graphQlResponse = await RequestUtil.GetResponse("2244936390884196352");
+		var graphQlResponse = await RequestUtil.GetResponse(listId);
 
 		var after = graphQlResponse!.Data.Photos.After;
 		var before = graphQlResponse.Data.Photos.Before;
-		Debug.WriteLine($"DiscoverItemsAsync 2244936390884196352, after:${after}, before: ${before}");
+		Debug.WriteLine($"GetWallpapersAsync {listId}, after:${after}, before: ${before}");
 		var entries = graphQlResponse.Data.Photos.Entries;
 		foreach (var entry in entries)
 		{
@@ -61,65 +64,5 @@ public class WallpaperListService
 				break;
 		}
 		return result;
-	}
-
-	public async IAsyncEnumerable<Wallpaper> LatestItemsAsync()
-	{
-		var graphQlResponse = await RequestUtil.GetResponse("2416408299759992832");
-
-		var after = graphQlResponse!.Data.Photos.After;
-		var before = graphQlResponse.Data.Photos.Before;
-		Debug.WriteLine($"LatestItemsAsync 2416408299759992832, after:${after}, before: ${before}");
-		var entries = graphQlResponse.Data.Photos.Entries;
-		foreach (var entry in entries)
-		{
-			if (entry.Blurhash == null)
-			{
-				Debug.WriteLine($"BlurHash(${entry.Id}) == null:::{entry.Urls.Thumb}");
-				var sourceImage = await Image.LoadAsync<Rgba32>(entry.Urls.Thumb);
-				entry.Blurhash = Blurhasher.Encode(sourceImage, 4, 3);
-			}
-			var image = Blurhasher.Decode(entry.Blurhash, 560, 320);
-			var thumbnail = image.ToBase64String(SixLabors.ImageSharp.Formats.Webp.WebpFormat.Instance);
-			yield return new Wallpaper
-			{
-				Id = entry.Id,
-				Url = entry.Urls.Thumb.Replace("http://", "https://"),
-				Link = entry.Link,
-				Author = entry.Heading,
-				Thumbnail = thumbnail,
-				ResolutionRatio = ComputeResolutionRatio(entry.Width, entry.Height),
-			};
-		}
-	}
-
-	public async IAsyncEnumerable<Wallpaper> VerticalScreenItemsAsync()
-	{
-		var graphQlResponse = await RequestUtil.GetResponse("2245081321414066176");
-
-		var after = graphQlResponse.Data.Photos.After;
-		var before = graphQlResponse.Data.Photos.Before;
-		Debug.WriteLine($"VerticalScreenItemsAsync 2245081321414066176, after:${after}, before: ${before}");
-		var entries = graphQlResponse.Data.Photos.Entries;
-		foreach (var entry in entries)
-		{
-			if (entry.Blurhash == null)
-			{
-				var sourceImage = await Image.LoadAsync<Rgba32>(entry.Urls.Thumb);
-				entry.Blurhash = Blurhasher.Encode(sourceImage, 4, 3);
-				Debug.WriteLine($"BlurHash(${entry.Id}) == null:::{entry.Urls.Thumb}");
-			}
-			var image = Blurhasher.Decode(entry.Blurhash, 560, 320);
-			var thumbnail = image.ToBase64String(SixLabors.ImageSharp.Formats.Webp.WebpFormat.Instance);
-			yield return new Wallpaper
-			{
-				Id = entry.Id,
-				Url = entry.Urls.Thumb.Replace("http://", "https://"),
-				Link = entry.Link,
-				Author = entry.Heading,
-				Thumbnail = thumbnail,
-				ResolutionRatio = ComputeResolutionRatio(entry.Width, entry.Height),
-			};
-		}
 	}
 }

@@ -2,14 +2,13 @@ using System.Collections.Concurrent;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Pap.erNet.Utils.Loaders;
 
 namespace Pap.erNet.Utils;
 
 public class ImageLoader
 {
-	public const string AsyncImageLoaderLogArea = "AsyncImageLoader";
-
 	public static readonly AttachedProperty<string?> SourceProperty = AvaloniaProperty.RegisterAttached<Image, string?>(
 		"Source",
 		typeof(ImageLoader)
@@ -33,201 +32,161 @@ public class ImageLoader
 
 	private static readonly string TempFolder = Path.Combine(Path.GetTempPath(), "Pap.erNet");
 
-	private static DiskCachedWebImageLoader AsyncImageLoader { get; set; } = new(TempFolder);
+	private static readonly DiskCachedWebImageLoader AsyncImageLoader = new(TempFolder);
 
-	private static ConcurrentDictionary<Image, CancellationTokenSource> _pendingOperations = new();
+	private static readonly ConcurrentDictionary<Image, CancellationTokenSource> PendingOperations = new();
 
-	private static async void OnLoadStatusChanged(Image sender, AvaloniaPropertyChangedEventArgs args)
+	private static void OnLoadStatusChanged(Image sender, AvaloniaPropertyChangedEventArgs args)
 	{
-		try
+		var loadStatus = args.GetNewValue<bool>();
+		var url = GetSource(sender);
+
+		LogHelper.WriteLogAsync($"OnLoadStatusChanged: loadStatus={loadStatus}, url={url ?? "(null)"}");
+
+		// 取消之前的加载任务
+		CancelAndRemove(sender);
+
+		if (!loadStatus || string.IsNullOrEmpty(url))
 		{
-			var loadStatus = args.GetNewValue<bool>();
-			var url = GetSource(sender);
-
-			LogHelper.WriteLogAsync($"OnLoadStatusChanged: loadStatus={loadStatus}, url={(string.IsNullOrEmpty(url) ? "(null)" : url)}");
-
-			// Cancel/Add new pending operation
-			var cts = _pendingOperations.AddOrUpdate(
-				sender,
-				new CancellationTokenSource(),
-				(_, y) =>
-				{
-					y.Cancel();
-					return new CancellationTokenSource();
-				}
-			);
-
-			if (!loadStatus)
+			// 离开视窗或没有 URL，显示缩略图
+			if (loadStatus && string.IsNullOrEmpty(url))
 			{
-				// 图片离开视窗，取消加载并恢复缩略图
-				_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
-				RestoreThumbnail(sender);
-				return;
+				// 在视窗内但没有 URL，也尝试显示缩略图
+				ShowThumbnail(sender);
 			}
-
-			if (string.IsNullOrEmpty(url))
+			else if (!loadStatus)
 			{
-				_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
-				return;
+				ShowThumbnail(sender);
 			}
-
-			// 加载图片，如果失败且仍在视窗内则自动重试
-			await LoadWithRetryAsync(sender, url!, cts);
+			return;
 		}
-		catch (Exception e)
+
+		// 进入视窗：先立即显示缩略图
+		ShowThumbnail(sender);
+
+		// 然后启动异步加载高清图
+		var cts = new CancellationTokenSource();
+		PendingOperations[sender] = cts;
+		_ = LoadImageAsync(sender, url, cts.Token);
+	}
+
+	private static void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args)
+	{
+		var url = args.GetNewValue<string?>();
+		if (string.IsNullOrEmpty(url))
+			return;
+
+		// 如果已经在视窗内，触发加载
+		if (GetLoadStatus(sender))
 		{
-			throw; // TODO 处理异常
+			CancelAndRemove(sender);
+			ShowThumbnail(sender);
+
+			var cts = new CancellationTokenSource();
+			PendingOperations[sender] = cts;
+			_ = LoadImageAsync(sender, url, cts.Token);
 		}
 	}
 
 	/// <summary>
-	///     在视窗区域内反复重试加载图片，直到成功或离开视窗。
-	///     每次失败后延迟递增时间再重试，避免频繁请求。
+	/// 异步加载图片，加载完成后更新到 Image.Source
 	/// </summary>
-	private static async Task LoadWithRetryAsync(Image sender, string url, CancellationTokenSource cts)
+	private static async Task LoadImageAsync(Image image, string url, CancellationToken cancellationToken)
 	{
-		const int initialRetryDelayMs = 2000; // 初始重试延迟 2 秒
-		const int maxRetryDelayMs = 30000; // 最大重试延迟 30 秒
-		var currentDelayMs = initialRetryDelayMs;
-
-		while (!cts.Token.IsCancellationRequested)
+		try
 		{
+			// 在后台线程加载图片
 			var bitmap = await Task.Run(
 					async () =>
 					{
 						try
 						{
-							// A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
-							// The Bitmap constructor is expensive and cannot be cancelled
-							await Task.Delay(20, cts.Token);
-
 							return await AsyncImageLoader.ProvideImageAsync(url);
-						}
-						catch (TaskCanceledException)
-						{
-							return null;
 						}
 						catch (Exception ex)
 						{
-							LogHelper.WriteLogAsync(ex.StackTrace);
+							LogHelper.WriteLogAsync($"[图片加载] 失败: {url}, {ex.Message}");
 							return null;
 						}
 					},
-					cts.Token
+					cancellationToken
 				)
-				.ConfigureAwait(true);
+				.ConfigureAwait(false);
 
-			if (cts.Token.IsCancellationRequested)
-				break;
+			if (cancellationToken.IsCancellationRequested)
+				return;
 
 			if (bitmap != null)
 			{
-				sender.Source = bitmap;
-				break;
-			}
-
-			// 加载失败，检查是否仍在视窗区域内（LoadStatus 为 true）
-			if (!GetLoadStatus(sender))
-				break;
-
-			// 等待递增延迟后重试
-			try
-			{
-				await Task.Delay(currentDelayMs, cts.Token);
-			}
-			catch (TaskCanceledException)
-			{
-				break;
-			}
-
-			// 递增延迟，但不超过最大值
-			currentDelayMs = Math.Min(currentDelayMs * 2, maxRetryDelayMs);
-		}
-
-		// "It is not guaranteed to be thread safe by ICollection, but ConcurrentDictionary's implementation is. Additionally, we recently exposed this API for .NET 5 as a public ConcurrentDictionary.TryRemove"
-		_pendingOperations.TryRemove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
-	}
-
-	private static void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args)
-	{
-		// Source 变化时，如果 LoadStatus 为 true（在视窗内），直接加载新图片
-		// 否则显示缩略图
-		if (GetLoadStatus(sender))
-		{
-			// 在视窗内，LoadStatus 属性变化会触发 OnLoadStatusChanged
-			// 这里需要手动触发一次加载
-			var url = args.GetNewValue<string?>();
-			if (!string.IsNullOrEmpty(url))
-			{
-				var cts = _pendingOperations.AddOrUpdate(
-					sender,
-					new CancellationTokenSource(),
-					(_, y) =>
+				// 回到 UI 线程设置图片
+				await Dispatcher.UIThread.InvokeAsync(() =>
+				{
+					// 再次检查是否仍在视窗内且没有被新的加载任务覆盖
+					if (GetLoadStatus(image) && !cancellationToken.IsCancellationRequested)
 					{
-						y.Cancel();
-						return new CancellationTokenSource();
+						image.Source = bitmap;
+						LogHelper.WriteLogAsync($"[图片加载] 成功: {url}");
 					}
-				);
-
-				// 不 await，fire-and-forget 加载
-				_ = LoadWithRetryAsync(sender, url!, cts);
+				});
 			}
 		}
-		else
+		catch (OperationCanceledException)
 		{
-			// 不在视窗内，显示缩略图
-			RestoreThumbnail(sender);
+			// 正常取消，忽略
+		}
+		catch (Exception ex)
+		{
+			LogHelper.WriteLogAsync($"[图片加载] 异常: {url}, {ex.Message}");
+		}
+		finally
+		{
+			PendingOperations.TryRemove(image, out _);
 		}
 	}
 
 	/// <summary>
-	///     恢复显示缩略图。当图片离开视窗或加载被取消时调用。
+	/// 取消并移除指定 Image 的加载任务
 	/// </summary>
-	private static void RestoreThumbnail(Image sender)
+	private static void CancelAndRemove(Image image)
 	{
-		var thumbnail = GetThumbnail(sender);
-		if (!string.IsNullOrEmpty(thumbnail))
+		if (PendingOperations.TryRemove(image, out var oldCts))
 		{
-			try
-			{
-				var arr = Convert.FromBase64String(thumbnail.Replace("data:image/webp;base64,", ""));
-				using var ms = new MemoryStream(arr);
-				sender.Source = new Bitmap(ms);
-			}
-			catch (Exception)
-			{
-				// 缩略图解码失败，忽略
-			}
+			oldCts.Cancel();
+			oldCts.Dispose();
 		}
 	}
 
-	public static string? GetSource(Image element)
+	/// <summary>
+	/// 显示缩略图（从 Thumbnail 附加属性获取 base64 数据）
+	/// 在 UI 线程同步执行
+	/// </summary>
+	private static void ShowThumbnail(Image sender)
 	{
-		return element.GetValue(SourceProperty);
+		var thumbnail = GetThumbnail(sender);
+		if (string.IsNullOrEmpty(thumbnail))
+			return;
+
+		try
+		{
+			var arr = Convert.FromBase64String(thumbnail.Replace("data:image/webp;base64,", ""));
+			using var ms = new MemoryStream(arr);
+			sender.Source = new Bitmap(ms);
+		}
+		catch (Exception ex)
+		{
+			LogHelper.WriteLogAsync($"[缩略图] 显示失败: {ex.Message}");
+		}
 	}
 
-	public static void SetSource(Image element, string? value)
-	{
-		element.SetValue(SourceProperty, value);
-	}
+	public static string? GetSource(Image element) => element.GetValue(SourceProperty);
 
-	public static void SetThumbnail(Image element, string? value)
-	{
-		element.SetValue(ThumbnailProperty, value);
-	}
+	public static void SetSource(Image element, string? value) => element.SetValue(SourceProperty, value);
 
-	public static string? GetThumbnail(Image element)
-	{
-		return element.GetValue(ThumbnailProperty);
-	}
+	public static string? GetThumbnail(Image element) => element.GetValue(ThumbnailProperty);
 
-	public static bool GetLoadStatus(Image element)
-	{
-		return element.GetValue(LoadStatusProperty);
-	}
+	public static void SetThumbnail(Image element, string? value) => element.SetValue(ThumbnailProperty, value);
 
-	public static void SetLoadStatus(Image element, bool value)
-	{
-		element.SetValue(LoadStatusProperty, value);
-	}
+	public static bool GetLoadStatus(Image element) => element.GetValue(LoadStatusProperty);
+
+	public static void SetLoadStatus(Image element, bool value) => element.SetValue(LoadStatusProperty, value);
 }

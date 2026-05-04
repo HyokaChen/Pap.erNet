@@ -32,20 +32,28 @@ public partial class App : Application
 	{
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 		{
-			// 在创建主窗口之前，先执行认证流程
+			// 在创建主窗口之前，先执行认证流程和分类列表初始化
 			Task.Run(async () =>
 				{
 					try
 					{
+						// 步骤1: 认证
 						var authResult = await AuthService.Instance.AuthenticateAsync();
 						LogHelper.WriteLogAsync($"App: 认证结果 = {authResult}");
+
+						if (authResult)
+						{
+							// 步骤2: 获取分类列表并初始化 ViewModel
+							var mainWindowViewModel = ServicesProvider.GetRequiredService<MainWindowViewModel>();
+							await mainWindowViewModel.InitializeListsAsync();
+						}
 					}
 					catch (Exception ex)
 					{
-						LogHelper.WriteLogAsync($"App: 认证异常 = {ex.Message}");
+						LogHelper.WriteLogAsync($"App: 初始化异常 = {ex.Message}");
 					}
 				})
-				.Wait(); // 同步等待认证完成，确保后续请求带有 Token
+				.Wait(); // 同步等待完成，确保后续请求带有 Token 和分类数据
 
 			desktop.MainWindow = ServicesProvider.GetRequiredService<MainWindow>();
 		}
@@ -76,7 +84,7 @@ public partial class App : Application
 		services.AddTransient<WallpaperView>();
 		services.AddTransient<WallpaperListView>();
 
-		services.AddTransient<MainWindowViewModel>();
+		services.AddSingleton<MainWindowViewModel>();
 
 		return services.BuildServiceProvider();
 	}

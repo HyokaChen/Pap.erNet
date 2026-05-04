@@ -23,23 +23,13 @@ public partial class MainWindow : Window
 	{
 		if (DataContext is MainWindowViewModel mainWindowViewModel)
 		{
-			switch (e.Source)
+			if (e.Source is TabControl tabControl)
 			{
-				case TabControl tabControl:
-					switch (tabControl.SelectedIndex)
-					{
-						case 0:
-							mainWindowViewModel.WallpaperListViewModels[0].WallpaperListViewModel.LoadNextDiscoverWallpapersAsync();
-							break;
-						case 1:
-							mainWindowViewModel.WallpaperListViewModels[1].WallpaperListViewModel.LoadNextLatestWallpapersAsync();
-							break;
-						case 2:
-							mainWindowViewModel.WallpaperListViewModels[2].WallpaperListViewModel.LoadNextVerticalScreenWallpapersAsync();
-							break;
-					}
-
-					break;
+				var selectedIndex = tabControl.SelectedIndex;
+				if (selectedIndex >= 0 && selectedIndex < mainWindowViewModel.WallpaperListViewModels.Count)
+				{
+					mainWindowViewModel.WallpaperListViewModels[selectedIndex].WallpaperListViewModel.LoadWallpapersAsync();
+				}
 			}
 		}
 	}

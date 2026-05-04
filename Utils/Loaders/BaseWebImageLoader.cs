@@ -25,7 +25,7 @@ public class BaseWebImageLoader : IAsyncImageLoader
 	/// </param>
 	public BaseWebImageLoader()
 	{
-		_logger = Logger.TryGet(LogEventLevel.Information, ImageLoader.AsyncImageLoaderLogArea);
+		_logger = Logger.TryGet(LogEventLevel.Information, "AsyncImageLoader");
 	}
 
 	/// <inheritdoc />
@@ -67,8 +67,8 @@ public class BaseWebImageLoader : IAsyncImageLoader
 		}
 		catch (Exception ex)
 		{
-			LogHelper.WriteLogAsync($"Request Error::{ex.Message} >>> {ex.StackTrace}");
-			throw;
+			LogHelper.WriteLogAsync($"[图片加载] 异常: {ex.Message}");
+			return null;
 		}
 	}
 
@@ -127,13 +127,15 @@ public class BaseWebImageLoader : IAsyncImageLoader
 					return await response.Content.ReadAsByteArrayAsync();
 				}
 			}
-			catch (HttpRequestException ex)
+			catch (Exception ex)
 			{
 				lastException = ex;
-				Console.WriteLine($"[POST重试] 第 {attempt} 次尝试失败: {ex.Message}");
+				LogHelper.WriteLogAsync($"[图片下载重试] 第 {attempt} 次尝试失败: {ex.Message}");
 			}
 		}
-		throw new HttpRequestException($"POST请求所有 {maxRetries + 1} 次尝试均失败。", lastException);
+
+		LogHelper.WriteLogAsync($"[图片下载] 所有 {maxRetries + 1} 次尝试均失败，返回 null");
+		return null;
 	}
 
 	/// <summary>
