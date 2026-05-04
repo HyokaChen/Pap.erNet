@@ -87,7 +87,7 @@ public class BaseWebImageLoader : IAsyncImageLoader
 				UseProxy = false,
 				MaxConnectionsPerServer = 5,
 				AllowAutoRedirect = true,
-				SslOptions = new SslClientAuthenticationOptions() { RemoteCertificateValidationCallback = (_, _, _, _) => true },
+				SslOptions = new SslClientAuthenticationOptions { RemoteCertificateValidationCallback = (_, _, _, _) => true },
 				AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
 			}
 		)

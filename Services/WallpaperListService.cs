@@ -27,7 +27,7 @@ public class WallpaperListService
 			}
 			var image = Blurhasher.Decode(entry.Blurhash, 560, 320);
 			var thumbnail = image.ToBase64String(SixLabors.ImageSharp.Formats.Webp.WebpFormat.Instance);
-			var res = new Wallpaper()
+			var res = new Wallpaper
 			{
 				Id = entry.Id,
 				Url = entry.Urls.Thumb.Replace("http://", "https://"),
@@ -81,7 +81,7 @@ public class WallpaperListService
 			}
 			var image = Blurhasher.Decode(entry.Blurhash, 560, 320);
 			var thumbnail = image.ToBase64String(SixLabors.ImageSharp.Formats.Webp.WebpFormat.Instance);
-			yield return new Wallpaper()
+			yield return new Wallpaper
 			{
 				Id = entry.Id,
 				Url = entry.Urls.Thumb.Replace("http://", "https://"),
@@ -111,7 +111,7 @@ public class WallpaperListService
 			}
 			var image = Blurhasher.Decode(entry.Blurhash, 560, 320);
 			var thumbnail = image.ToBase64String(SixLabors.ImageSharp.Formats.Webp.WebpFormat.Instance);
-			yield return new Wallpaper()
+			yield return new Wallpaper
 			{
 				Id = entry.Id,
 				Url = entry.Urls.Thumb.Replace("http://", "https://"),

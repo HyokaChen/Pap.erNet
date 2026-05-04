@@ -41,11 +41,11 @@ namespace Pap.erNet.Utils
 
 		private static HttpClient PhotosHttpClient { get; } =
 			new(
-				new SocketsHttpHandler()
+				new SocketsHttpHandler
 				{
 					UseProxy = false,
 					AllowAutoRedirect = true,
-					SslOptions = new SslClientAuthenticationOptions()
+					SslOptions = new SslClientAuthenticationOptions
 					{
 						RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true,
 					},

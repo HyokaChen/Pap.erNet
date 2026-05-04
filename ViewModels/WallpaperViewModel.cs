@@ -19,7 +19,7 @@ public class WallpaperViewModel(Wallpaper wallpaper) : ViewModelBase
 				else
 				{
 					using var process = Process.Start(
-						new ProcessStartInfo()
+						new ProcessStartInfo
 						{
 							FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? url : "open",
 							Arguments = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? $"{url}" : "",
@@ -48,7 +48,7 @@ public class WallpaperViewModel(Wallpaper wallpaper) : ViewModelBase
 	{
 		var escapeArgs = cmd.Replace("\"", "\\\"");
 		using var process = Process.Start(
-			new ProcessStartInfo()
+			new ProcessStartInfo
 			{
 				FileName = "/bin/sh",
 				Arguments = $"-c \"{escapeArgs}\"",

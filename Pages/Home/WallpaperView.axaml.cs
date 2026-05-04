@@ -83,12 +83,12 @@ public partial class WallpaperView : UserControl
 		try
 		{
 			var client = new HttpClient(
-				new SocketsHttpHandler()
+				new SocketsHttpHandler
 				{
 					UseProxy = false,
 					MaxConnectionsPerServer = 5,
 					AllowAutoRedirect = true,
-					SslOptions = new SslClientAuthenticationOptions()
+					SslOptions = new SslClientAuthenticationOptions
 					{
 						RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true,
 					},
