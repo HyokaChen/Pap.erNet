@@ -101,7 +101,7 @@ public partial class App : Application
 				new SocketsHttpHandler
 				{
 					UseProxy = false,
-					MaxConnectionsPerServer = 2,
+					MaxConnectionsPerServer = 10,
 					AllowAutoRedirect = true,
 					SslOptions = new System.Net.Security.SslClientAuthenticationOptions
 					{
@@ -113,6 +113,10 @@ public partial class App : Application
 						| System.Net.DecompressionMethods.Brotli,
 					PooledConnectionLifetime = TimeSpan.FromMinutes(5),
 					PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+					EnableMultipleHttp2Connections = true,
+					KeepAlivePingPolicy = HttpKeepAlivePingPolicy.Always,
+					KeepAlivePingDelay = TimeSpan.FromSeconds(30),
+					KeepAlivePingTimeout = TimeSpan.FromSeconds(10),
 				}
 			)
 			.SetHandlerLifetime(TimeSpan.FromMinutes(10));

@@ -53,11 +53,16 @@ public class BaseWebImageLoader : IAsyncImageLoader
 		new SocketsHttpHandler
 		{
 			UseProxy = false,
-			MaxConnectionsPerServer = 2,
+			MaxConnectionsPerServer = 10,
 			AllowAutoRedirect = true,
 			SslOptions = new SslClientAuthenticationOptions { RemoteCertificateValidationCallback = (_, _, _, _) => true },
 			AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
 			PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+			PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+			EnableMultipleHttp2Connections = true,
+			KeepAlivePingPolicy = HttpKeepAlivePingPolicy.Always,
+			KeepAlivePingDelay = TimeSpan.FromSeconds(30),
+			KeepAlivePingTimeout = TimeSpan.FromSeconds(10),
 		}
 	)
 	{
@@ -145,10 +150,12 @@ public class BaseWebImageLoader : IAsyncImageLoader
 
 			try
 			{
-				// 阶段1：发送请求并获取响应头（15秒超时）
-				using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+				// 阶段1：发送请求并获取响应头（30秒超时，给慢速连接更多时间）
+				using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 				using var request = new HttpRequestMessage(HttpMethod.Get, url);
 				request.Headers.Host = "c3.wuse.co";
+				// 显式启用 Keep-Alive，复用连接
+				request.Headers.ConnectionClose = false;
 
 				LogHelper.WriteLogAsync($"[Network] 发送请求: {url}");
 				using var response = await client
