@@ -75,10 +75,10 @@ public static class RequestUtil
 		PhotosHttpClient.DefaultRequestHeaders.Host = "paper.nsns.in";
 		PhotosHttpClient.DefaultRequestHeaders.Connection.Add("keep-alive");
 		PhotosHttpClient.DefaultRequestHeaders.Add("locale", "zh-Hans");
-		PhotosHttpClient.DefaultRequestHeaders.Add("client-version", "39.0");
-		PhotosHttpClient.DefaultRequestHeaders.Add("apollographql-client-version", "5.3.0-39");
-		PhotosHttpClient.DefaultRequestHeaders.Add("apollographql-client-name", "com.w.paper.apollo-ios");
-		PhotosHttpClient.DefaultRequestHeaders.UserAgent.ParseAdd("pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
+		PhotosHttpClient.DefaultRequestHeaders.Add("client-version", AppConstants.ClientVersion);
+		PhotosHttpClient.DefaultRequestHeaders.Add("apollographql-client-version", AppConstants.ApolloClientVersion);
+		PhotosHttpClient.DefaultRequestHeaders.Add("apollographql-client-name", AppConstants.APOLLO_CLIENT_NAME);
+		PhotosHttpClient.DefaultRequestHeaders.UserAgent.ParseAdd(DeviceUtil.GetGraphQlUserAgent());
 	}
 
 	/// <summary>

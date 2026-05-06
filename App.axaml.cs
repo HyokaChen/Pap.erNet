@@ -87,15 +87,14 @@ public partial class App : Application
 			.ConfigureHttpClient(client =>
 			{
 				client.Timeout = TimeSpan.FromSeconds(60);
-				client.DefaultRequestHeaders.UserAgent.ParseAdd("pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
+				client.DefaultRequestHeaders.UserAgent.ParseAdd(DeviceUtil.GetImageDownloadUserAgent());
 				client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/avif"));
 				client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/webp"));
 				client.DefaultRequestHeaders.Accept.Add(
-					new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*") { Quality = 0.8 }
+					new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*") { Quality = 0.9 }
 				);
 				client.DefaultRequestHeaders.AcceptEncoding.Add(new System.Net.Http.Headers.StringWithQualityHeaderValue("gzip"));
 				client.DefaultRequestHeaders.AcceptEncoding.Add(new System.Net.Http.Headers.StringWithQualityHeaderValue("deflate"));
-				client.DefaultRequestHeaders.AcceptEncoding.Add(new System.Net.Http.Headers.StringWithQualityHeaderValue("br"));
 			})
 			.ConfigurePrimaryHttpMessageHandler(() =>
 				new SocketsHttpHandler

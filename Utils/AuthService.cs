@@ -7,7 +7,7 @@ namespace Pap.erNet.Utils;
 
 /// <summary>
 /// Paper 认证服务
-/// 负责设备注册、签到、Token 管理等完整认证流程
+/// 负责设备签到、Token 管理等完整认证流程
 /// </summary>
 public class AuthService
 {
@@ -15,9 +15,6 @@ public class AuthService
 
 	private const string PAPER_GRAPHQL_URL = "https://paper.nsns.in/graphql";
 	private const string PAPER_ENDPOINT_URL = "https://paper.nsns.in/api/endpoint";
-	private const string APP_VERSION = "5.3.0";
-	private const int APP_BUILD = 39;
-	private const int DISTRIBUTION = 4; // 4 = Windows (2=macOS)
 
 	private static readonly HttpClient AuthHttpClient = new(
 		new SocketsHttpHandler
@@ -36,10 +33,10 @@ public class AuthService
 		AuthHttpClient.DefaultRequestHeaders.Host = "paper.nsns.in";
 		AuthHttpClient.DefaultRequestHeaders.Connection.Add("keep-alive");
 		AuthHttpClient.DefaultRequestHeaders.Add("locale", "zh-Hans");
-		AuthHttpClient.DefaultRequestHeaders.Add("client-version", "39.0");
-		AuthHttpClient.DefaultRequestHeaders.Add("apollographql-client-version", "5.3.0-39");
-		AuthHttpClient.DefaultRequestHeaders.Add("apollographql-client-name", "com.w.paper.apollo-ios");
-		AuthHttpClient.DefaultRequestHeaders.UserAgent.ParseAdd("pap.er/39 CFNetwork/3860.200.71 Darwin/25.1.0");
+		AuthHttpClient.DefaultRequestHeaders.Add("client-version", AppConstants.ClientVersion);
+		AuthHttpClient.DefaultRequestHeaders.Add("apollographql-client-version", AppConstants.ApolloClientVersion);
+		AuthHttpClient.DefaultRequestHeaders.Add("apollographql-client-name", AppConstants.APOLLO_CLIENT_NAME);
+		AuthHttpClient.DefaultRequestHeaders.UserAgent.ParseAdd(DeviceUtil.GetGraphQlUserAgent());
 	}
 
 	/// <summary>
@@ -68,29 +65,20 @@ public class AuthService
 	public string? GetAuthorizationHeader() => string.IsNullOrEmpty(Token) ? null : $"Bearer {Token}";
 
 	/// <summary>
-	/// 执行完整认证流程：Endpoint 探测 → UpdateDevice → CheckinDevice
-	/// 在应用启动时调用
+	/// 执行完整认证流程：Endpoint 探测 → CheckinDevice
+	/// 严格按照原始 pap.er 应用的启动流程
 	/// </summary>
-	/// <returns>认证是否成功</returns>
 	public async Task<bool> AuthenticateAsync()
 	{
 		LogHelper.WriteLogAsync($"AuthService: 开始认证流程, UID={DeviceUid}");
 
 		try
 		{
-			// 步骤 1: 探测端点（可选，不阻断流程）
+			// 步骤 1: 探测端点
 			var endpointOk = await CheckEndpointAsync();
 			LogHelper.WriteLogAsync($"AuthService: 端点探测结果 = {endpointOk}");
 
-			// 步骤 2: UpdateDevice - 注册/更新设备
-			var updateOk = await UpdateDeviceAsync();
-			if (!updateOk)
-			{
-				LogHelper.WriteLogAsync("AuthService: UpdateDevice 失败");
-				return false;
-			}
-
-			// 步骤 3: CheckinDevice - 设备签到获取 Token
+			// 步骤 2: CheckinDevice - 设备签到获取 Token
 			var checkinOk = await CheckinDeviceAsync();
 			if (!checkinOk)
 			{
@@ -109,13 +97,19 @@ public class AuthService
 	}
 
 	/// <summary>
-	/// 步骤 1: 探测端点
+	/// 步骤 1: 探测端点（使用 Alamofire 风格 User-Agent）
 	/// </summary>
 	private async Task<bool> CheckEndpointAsync()
 	{
 		try
 		{
-			using var response = await AuthHttpClient.GetAsync(PAPER_ENDPOINT_URL).ConfigureAwait(false);
+			using var request = new HttpRequestMessage(HttpMethod.Get, PAPER_ENDPOINT_URL);
+			request.Headers.UserAgent.ParseAdd(DeviceUtil.GetEndpointUserAgent());
+			request.Headers.Host = "paper.nsns.in";
+			request.Headers.AcceptLanguage.ParseAdd("zh-Hans-CN;q=1.0");
+			request.Headers.Connection.Add("keep-alive");
+
+			using var response = await AuthHttpClient.SendAsync(request).ConfigureAwait(false);
 			return response.IsSuccessStatusCode;
 		}
 		catch (Exception ex)
@@ -126,60 +120,7 @@ public class AuthService
 	}
 
 	/// <summary>
-	/// 步骤 2: UpdateDevice - 注册/更新设备
-	/// </summary>
-	private async Task<bool> UpdateDeviceAsync()
-	{
-		const string query = """
-			mutation UpdateDevice($uid: String, $appVer: String, $appBuild: Float, $deviceModel: String, $osName: String, $osVer: String, $lang: String, $prefLang: String, $screens: [String], $distr: Int, $apnsToken: String, $preferences: PreferencesInput) {
-			  updateDevice(
-			    uid: $uid
-			    appVer: $appVer
-			    appBuild: $appBuild
-			    deviceModel: $deviceModel
-			    osName: $osName
-			    osVer: $osVer
-			    lang: $lang
-			    prefLang: $prefLang
-			    screens: $screens
-			    distr: $distr
-			    apnsToken: $apnsToken
-			    preferences: $preferences
-			  ) {
-			    __typename
-			    id
-			    token
-			    nvAvl
-			    rs
-			  }
-			}
-			""";
-
-		var requestBody = new DeviceGraphQL
-		{
-			Query = query,
-			OperationName = "UpdateDevice",
-			Variables = new DeviceVariables
-			{
-				Uid = DeviceUid,
-				// 其余字段为 null，与文档步骤 2 一致
-			},
-		};
-
-		var response = await SendDeviceRequestAsync(requestBody, "UpdateDevice", "mutation").ConfigureAwait(false);
-		if (response?.Data?.UpdateDevice == null)
-		{
-			LogHelper.WriteLogAsync("AuthService.UpdateDevice: 响应为空");
-			return false;
-		}
-
-		DeviceId = response.Data.UpdateDevice.Id;
-		LogHelper.WriteLogAsync($"AuthService.UpdateDevice: 成功, DeviceId={DeviceId}");
-		return true;
-	}
-
-	/// <summary>
-	/// 步骤 3: CheckinDevice - 设备签到获取 Token
+	/// 步骤 2: CheckinDevice - 设备签到获取 Token
 	/// </summary>
 	private async Task<bool> CheckinDeviceAsync()
 	{
@@ -217,16 +158,16 @@ public class AuthService
 			Variables = new DeviceVariables
 			{
 				Uid = DeviceUid,
-				AppVer = APP_VERSION,
-				AppBuild = APP_BUILD,
+				AppVer = AppConstants.APP_VERSION,
+				AppBuild = AppConstants.APP_BUILD,
 				DeviceModel = DeviceUtil.GetDeviceModel(),
 				OsName = DeviceUtil.GetOsName(),
 				OsVer = DeviceUtil.GetOsVersion(),
 				Lang = "zh",
 				PrefLang = "zh-Hans",
 				Screens = DeviceUtil.GetScreens(),
-				Distr = DISTRIBUTION,
-				ApnsToken = "928059a031961532f0bf5ed23cf61f83116828960efca48e585b129dfc9e926a",
+				Distr = DeviceUtil.GetDistribution(),
+				ApnsToken = "0084691cadb326d5bebadd0f1530548d3dd8c6b7b4deb76df3e396a7ec6bdd92",
 				Preferences = new DevicePreferences
 				{
 					Language = "zh-Hans",
@@ -267,7 +208,7 @@ public class AuthService
 	}
 
 	/// <summary>
-	/// 步骤 6: UpdateDevice - 更新设备偏好设置（已认证后调用）
+	/// 更新设备偏好设置（已认证后调用）
 	/// </summary>
 	public async Task<bool> UpdatePreferencesAsync(DevicePreferences preferences)
 	{
@@ -314,19 +255,16 @@ public class AuthService
 	{
 		try
 		{
-			// 使用 HttpRequestMessage 以便设置动态请求头
 			var jsonString = JsonSerializer.Serialize(requestBody, AuthSourceGenerationContext.Default.DeviceGraphQL);
 			var requestMessage = new HttpRequestMessage(HttpMethod.Post, PAPER_GRAPHQL_URL)
 			{
 				Content = new StringContent(jsonString, Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
 			};
 
-			// 动态请求头
 			requestMessage.Headers.Add("did", DeviceUid);
 			requestMessage.Headers.Add("X-APOLLO-OPERATION-NAME", operationName);
 			requestMessage.Headers.Add("X-APOLLO-OPERATION-TYPE", operationType);
 
-			// 如果已有 Token，附加 Authorization
 			var authHeader = GetAuthorizationHeader();
 			if (authHeader != null)
 			{

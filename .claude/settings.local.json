@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(dotnet format *)",
+      "Bash(dotnet csharpier . *)",
+      "Bash(dotnet csharpier format *)"
+    ]
+  }
+}
