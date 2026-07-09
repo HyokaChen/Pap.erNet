@@ -1,61 +1,247 @@
-<Window xmlns="https://github.com/avaloniaui"
-                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                   mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="666"
-                   x:Class="Pap.erNet.Views.MainWindow"
-		           xmlns:vm="using:Pap.erNet.ViewModels"
-                   x:DataType="vm:MainWindowViewModel"
-                   xmlns:home="clr-namespace:Pap.erNet.Pages.Home"
-                   Icon="/Assets/logo.ico"
-                   Title="Pap.erNet"
-                   TransparencyLevelHint="AcrylicBlur"
-                   Background="Transparent"
-                   Width="350" Height="666"
-		           MaxWidth="350" MaxHeight="666"
-		           MinWidth="350" MinHeight="666"
-		           Focusable="True"
-                   x:Name="WallpaperWindow"
-		           Closing="Window_Closing"
-		           WindowStartupLocation="CenterScreen"
-                   >
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
-    <Panel>
-        <ExperimentalAcrylicBorder IsHitTestVisible="False">
-            <ExperimentalAcrylicBorder.Material>
-                <ExperimentalAcrylicMaterial
-                    BackgroundSource="Digger"
-                    TintColor="Black"
-                    TintOpacity="1"
-                    MaterialOpacity="0.65"
-                ></ExperimentalAcrylicMaterial>
-            </ExperimentalAcrylicBorder.Material>
-        </ExperimentalAcrylicBorder>
-        <StackPanel Orientation="Vertical"
-                    HorizontalAlignment="Center"
-        >
-            <TabControl Margin="0 16 0 0"
-						SelectedIndex="0" 
-                        Padding="0"
-						SelectionChanged="TabChange"
-						ItemsSource="{Binding WallpaperListViewModels}"
-						DisplayMemberBinding="{Binding Header, x:DataType=vm:HeaderWithWallpaperListViewModel}"
-                        >
-                <TabControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal"></StackPanel>
-                    </ItemsPanelTemplate>
-                </TabControl.ItemsPanel>
-				<TabControl.DataTemplates>
-					<DataTemplate x:DataType="vm:HeaderWithWallpaperListViewModel">
-						<home:WallpaperListView DataContext="{Binding WallpaperListViewModel}"></home:WallpaperListView>
-					</DataTemplate>
-				</TabControl.DataTemplates>
-            </TabControl>
-        </StackPanel>
-    </Panel>
+<Window
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	d:DesignWidth="350"
+	d:DesignHeight="666"
+	x:Class="Pap.erNet.Views.MainWindow"
+	xmlns:vm="using:Pap.erNet.ViewModels"
+	x:DataType="vm:MainWindowViewModel"
+	xmlns:home="clr-namespace:Pap.erNet.Pages.Home"
+	xmlns:settings="clr-namespace:Pap.erNet.Pages.Settings"
+	xmlns:me="clr-namespace:Pap.erNet.Pages.Me"
+	Icon="/Assets/logo.ico"
+	Title="Pap.erNet"
+	TransparencyLevelHint="AcrylicBlur"
+	Background="Transparent"
+	Width="350"
+	Height="666"
+	MaxWidth="350"
+	MaxHeight="666"
+	MinWidth="350"
+	MinHeight="666"
+	Focusable="True"
+	x:Name="WallpaperWindow"
+	Closing="Window_Closing"
+	WindowStartupLocation="CenterScreen"
+>
+	<Design.DataContext>
+		<vm:MainWindowViewModel />
+	</Design.DataContext>
+	<Panel>
+		<!-- Acrylic blur background -->
+		<ExperimentalAcrylicBorder IsHitTestVisible="False">
+			<ExperimentalAcrylicBorder.Material>
+				<ExperimentalAcrylicMaterial BackgroundSource="Digger" TintColor="Black" TintOpacity="1" MaterialOpacity="0.65" />
+			</ExperimentalAcrylicBorder.Material>
+		</ExperimentalAcrylicBorder>
+
+		<!-- ==================== PAGE CONTAINER ==================== -->
+		<Panel x:Name="PageContainer">
+			<!-- =============== HOME PAGE =============== -->
+			<Grid x:Name="HomePage">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto" />
+					<!-- Header -->
+					<RowDefinition Height="Auto" />
+					<!-- Tab Navigation -->
+					<RowDefinition Height="*" />
+					<!-- Wallpaper Content -->
+				</Grid.RowDefinitions>
+
+				<!-- Header: pap.er logo + action buttons -->
+				<Border Height="56" Padding="16,16,16,0" Background="Transparent">
+					<Grid ColumnDefinitions="*,Auto,Auto">
+						<!-- 镂空 Logo (semi-transparent to achieve hollow-out look) -->
+						<TextBlock
+							Text="pap.er"
+							FontSize="24"
+							FontWeight="Bold"
+							LetterSpacing="3"
+							VerticalAlignment="Center"
+							Foreground="#FFFFFF"
+							Opacity="0.75"
+						/>
+
+						<!-- Grid View Toggle Button -->
+						<Button
+							Grid.Column="1"
+							Width="32"
+							Height="32"
+							Background="Transparent"
+							BorderThickness="0"
+							CornerRadius="8"
+							Margin="0,0,4,0"
+							Cursor="Hand"
+							ToolTip.Tip="网格视图"
+						>
+							<Panel Width="20" Height="20">
+								<Border Width="8" Height="8" Background="#A0A0A0" CornerRadius="1" HorizontalAlignment="Left" VerticalAlignment="Top" />
+								<Border Width="8" Height="8" Background="#A0A0A0" CornerRadius="1" HorizontalAlignment="Right" VerticalAlignment="Top" />
+								<Border Width="8" Height="8" Background="#A0A0A0" CornerRadius="1" HorizontalAlignment="Left" VerticalAlignment="Bottom" />
+								<Border Width="8" Height="8" Background="#A0A0A0" CornerRadius="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" />
+							</Panel>
+							<Button.Styles>
+								<Style Selector="Button:hover">
+									<Setter Property="Background" Value="#3A3A3A" />
+								</Style>
+							</Button.Styles>
+						</Button>
+
+						<!-- Settings Button -->
+						<Button
+							Grid.Column="2"
+							Width="32"
+							Height="32"
+							Background="Transparent"
+							BorderThickness="0"
+							CornerRadius="8"
+							Cursor="Hand"
+							ToolTip.Tip="设置"
+							Click="OnSettingsClick"
+						>
+							<Panel Width="20" Height="20">
+								<Path
+									Data="M10,2 L10,2 C10.8,2 11.5,2.5 11.8,3.2 L12.5,4.5 C12.7,4.9 13.1,5.1 13.5,5.1 L14.9,5 C15.7,4.9 16.4,5.3 16.7,6 L17,6.7 C17.3,7.4 17.1,8.2 16.5,8.7 L15.5,9.5 C15.2,9.8 15.1,10.2 15.1,10.6 L15.5,12 C15.7,12.8 15.3,13.6 14.6,13.9 L13.9,14.2 C13.2,14.5 12.4,14.3 11.9,13.7 L11,12.8 C10.7,12.5 10.3,12.4 9.9,12.4 L8.1,12.4 C7.7,12.4 7.3,12.5 7,12.8 L6.1,13.7 C5.6,14.3 4.8,14.5 4.1,14.2 L3.4,13.9 C2.7,13.6 2.3,12.8 2.5,12 L2.9,10.6 C3,10.2 2.8,9.8 2.5,9.5 L1.5,8.7 C0.9,8.2 0.7,7.4 1,6.7 L1.3,6 C1.6,5.3 2.3,4.9 3.1,5 L4.5,5.1 C4.9,5.1 5.3,4.9 5.5,4.5 L6.2,3.2 C6.5,2.5 7.2,2 8,2 L10,2 Z"
+									Stroke="#A0A0A0"
+									StrokeThickness="1.2"
+									Fill="Transparent"
+									Stretch="Uniform"
+								/>
+								<Ellipse
+									Width="6"
+									Height="6"
+									Stroke="#A0A0A0"
+									StrokeThickness="1"
+									Fill="Transparent"
+									HorizontalAlignment="Center"
+									VerticalAlignment="Center"
+								/>
+							</Panel>
+							<Button.Styles>
+								<Style Selector="Button:hover">
+									<Setter Property="Background" Value="#3A3A3A" />
+								</Style>
+							</Button.Styles>
+						</Button>
+					</Grid>
+				</Border>
+
+				<!-- Tab Navigation Bar (custom, without TabControl) -->
+				<Border Grid.Row="1" Height="40" Padding="16,0" Background="Transparent">
+					<ItemsControl x:Name="TabItemsControl" ItemsSource="{Binding WallpaperListViewModels}" HorizontalAlignment="Left">
+						<ItemsControl.ItemsPanel>
+							<ItemsPanelTemplate>
+								<StackPanel Orientation="Horizontal" Spacing="32" />
+							</ItemsPanelTemplate>
+						</ItemsControl.ItemsPanel>
+						<ItemsControl.ItemTemplate>
+							<DataTemplate x:DataType="vm:HeaderWithWallpaperListViewModel">
+								<Border Height="40" Background="Transparent" Cursor="Hand" PointerPressed="OnTabPressed">
+									<StackPanel Orientation="Vertical" VerticalAlignment="Bottom">
+										<TextBlock
+											Text="{Binding Header}"
+											FontSize="14"
+											FontWeight="500"
+											HorizontalAlignment="Center"
+											Padding="0,0,0,8"
+											Foreground="#A0A0A0"
+										/>
+										<!-- Underline indicator -->
+										<Border Height="2" CornerRadius="1" HorizontalAlignment="Stretch" Background="Transparent" />
+									</StackPanel>
+								</Border>
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</Border>
+
+				<!-- Wallpaper Content Area (Carousel shows one tab's content at a time) -->
+				<Carousel
+					Grid.Row="2"
+					SelectedIndex="{Binding SelectedTabIndex}"
+					ItemsSource="{Binding WallpaperListViewModels}"
+					Margin="0"
+					Padding="0"
+				>
+					<Carousel.DataTemplates>
+						<DataTemplate x:DataType="vm:HeaderWithWallpaperListViewModel">
+							<home:WallpaperListView DataContext="{Binding WallpaperListViewModel}" />
+						</DataTemplate>
+					</Carousel.DataTemplates>
+				</Carousel>
+			</Grid>
+
+			<!-- =============== MY WALLPAPERS PAGE =============== -->
+			<me:MeView
+				x:Name="MyWallpapersPage"
+				IsVisible="False"
+				Width="350"
+				Height="666"
+				HorizontalAlignment="Center"
+				DataContext="{Binding Me}"
+			/>
+
+			<!-- =============== SETTINGS PAGE =============== -->
+			<settings:SettingsView
+				x:Name="SettingsPage"
+				IsVisible="False"
+				Width="350"
+				Height="666"
+				HorizontalAlignment="Center"
+				DataContext="{Binding SettingsViewModel}"
+			/>
+		</Panel>
+
+		<!-- =============== FAB (Refresh Button) - visible on Home =============== -->
+		<Button
+			x:Name="FabButton"
+			Width="48"
+			Height="48"
+			CornerRadius="24"
+			Background="#2A2A2A"
+			BorderThickness="1"
+			BorderBrush="#3A3A3A"
+			HorizontalAlignment="Left"
+			VerticalAlignment="Bottom"
+			Margin="16,0,0,16"
+			Cursor="Hand"
+			ToolTip.Tip="刷新"
+			Command="{Binding RefreshCurrentTabCommand}"
+			Opacity="0.9"
+		>
+			<Button.Styles>
+				<Style Selector="Button:hover">
+					<Setter Property="Background" Value="#3A3A3A" />
+				</Style>
+				<Style Selector="Button:pressed  /template/ ContentPresenter">
+					<Setter Property="Background" Value="#4A4A4A" />
+				</Style>
+			</Button.Styles>
+			<Panel Width="20" Height="20">
+				<!-- Refresh icon using Path -->
+				<Path
+					Data="M12,6 C12,6 14,4 17,4 C20,4 22,6 22,9 C22,12 20,14 17,14 L7,14 C4,14 2,12 2,9 C2,6 4,4 7,4 C8,4 9,4.2 10,4.8"
+					Stroke="#FFFFFF"
+					StrokeThickness="1.5"
+					Fill="Transparent"
+					StrokeLineCap="Round"
+					Stretch="Uniform"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+				/>
+				<Path
+					Data="M12,2 L14,5 L12,8"
+					Stroke="#FFFFFF"
+					StrokeThickness="1.5"
+					Fill="Transparent"
+					StrokeLineCap="Round"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+				/>
+			</Panel>
+		</Button>
+	</Panel>
 </Window>

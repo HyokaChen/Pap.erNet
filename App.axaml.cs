@@ -4,6 +4,8 @@ using Avalonia.Markup.Xaml;
 using HotAvalonia;
 using Microsoft.Extensions.DependencyInjection;
 using Pap.erNet.Pages.Home;
+using Pap.erNet.Pages.Me;
+using Pap.erNet.Pages.Settings;
 using Pap.erNet.Utils;
 using Pap.erNet.Utils.Loaders;
 using Pap.erNet.ViewModels;
@@ -123,6 +125,8 @@ public partial class App : Application
 		services.AddSingleton<MainWindow>();
 		services.AddTransient<WallpaperView>();
 		services.AddTransient<WallpaperListView>();
+		services.AddTransient<SettingsView>();
+		services.AddTransient<MeView>();
 
 		services.AddSingleton<MainWindowViewModel>();
 

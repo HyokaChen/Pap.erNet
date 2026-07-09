@@ -1,8 +1,20 @@
 ﻿using System.Collections.ObjectModel;
+using System.Windows.Input;
 using Pap.erNet.Models;
 using Pap.erNet.Utils;
+using ReactiveUI;
 
 namespace Pap.erNet.ViewModels;
+
+/// <summary>
+/// 应用页面枚举
+/// </summary>
+public enum PageType
+{
+	Home,
+	MyWallpapers,
+	Settings,
+}
 
 public class HeaderWithWallpaperListViewModel : ViewModelBase
 {
@@ -19,6 +31,90 @@ public class HeaderWithWallpaperListViewModel : ViewModelBase
 public class MainWindowViewModel : ViewModelBase
 {
 	public ObservableCollection<HeaderWithWallpaperListViewModel> WallpaperListViewModels { get; set; } = [];
+
+	/// <summary>
+	/// 子页面 ViewModel 实例
+	/// </summary>
+	public SettingsViewModel SettingsViewModel { get; } = new();
+
+	public MeViewModel Me { get; } = new();
+
+	public MainWindowViewModel()
+	{
+		RefreshCurrentTabCommand = ReactiveCommand.CreateFromTask(RefreshCurrentTabAsync);
+	}
+
+	/// <summary>
+	/// 当前页面类型
+	/// </summary>
+	private PageType _currentPage = PageType.Home;
+	public PageType CurrentPage
+	{
+		get => _currentPage;
+		set => this.RaiseAndSetIfChanged(ref _currentPage, value);
+	}
+
+	/// <summary>
+	/// 当前选中的 Tab 索引
+	/// </summary>
+	private int _selectedTabIndex;
+	public int SelectedTabIndex
+	{
+		get => _selectedTabIndex;
+		set
+		{
+			this.RaiseAndSetIfChanged(ref _selectedTabIndex, value);
+			// 切换 Tab 时加载对应分类的壁纸
+			if (value >= 0 && value < WallpaperListViewModels.Count)
+			{
+				WallpaperListViewModels[value].WallpaperListViewModel.LoadWallpapersAsync();
+			}
+		}
+	}
+
+	/// <summary>
+	/// FAB 刷新按钮是否正在旋转
+	/// </summary>
+	private bool _isFabRefreshing;
+	public bool IsFabRefreshing
+	{
+		get => _isFabRefreshing;
+		set => this.RaiseAndSetIfChanged(ref _isFabRefreshing, value);
+	}
+
+	/// <summary>
+	/// 刷新当前 Tab 壁纸命令（FAB 按钮）
+	/// </summary>
+	public ICommand RefreshCurrentTabCommand { get; }
+
+	/// <summary>
+	/// 导航到指定页面
+	/// </summary>
+	public void NavigateTo(PageType page)
+	{
+		CurrentPage = page;
+	}
+
+	/// <summary>
+	/// 刷新当前选中的 Tab 壁纸列表
+	/// </summary>
+	private async Task RefreshCurrentTabAsync()
+	{
+		if (SelectedTabIndex < 0 || SelectedTabIndex >= WallpaperListViewModels.Count)
+			return;
+
+		IsFabRefreshing = true;
+		LogHelper.WriteLogAsync($"FAB: 刷新 Tab {SelectedTabIndex}");
+
+		try
+		{
+			await Task.Run(() => WallpaperListViewModels[SelectedTabIndex].WallpaperListViewModel.LoadWallpapersAsync());
+		}
+		finally
+		{
+			IsFabRefreshing = false;
+		}
+	}
 
 	/// <summary>
 	/// 从服务端获取分类列表并初始化 WallpaperListViewModels

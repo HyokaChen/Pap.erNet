@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Pap.erNet.Utils;
 using Pap.erNet.ViewModels;
@@ -9,7 +8,6 @@ namespace Pap.erNet.Pages.Home;
 public partial class WallpaperListView : UserControl
 {
 	private bool _isUpdatingLoadStatus;
-	private ScrollViewer? _scrollViewer;
 
 	public WallpaperListView()
 	{
@@ -27,28 +25,13 @@ public partial class WallpaperListView : UserControl
 
 	private void OnBatchAddingCompleted()
 	{
-		// 批量添加完成后，更新加载状态
 		if (DataContext is WallpaperListViewModel vm)
 		{
-			LogHelper.WriteLogAsync("OnBatchAddingCompleted: 批量添加完成，准备更新加载状态");
+			LogHelper.WriteLogAsync("OnBatchAddingCompleted: 批量添加完成");
 
-			Dispatcher.UIThread.Post(() =>
+			Avalonia.Threading.Dispatcher.UIThread.Post(() =>
 			{
-				_scrollViewer ??=
-					this.FindControl<ScrollViewer>("WallpaperListIC")
-					?? this.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault();
-
-				if (_scrollViewer != null)
-				{
-					LogHelper.WriteLogAsync(
-						$"OnBatchAddingCompleted: 找到 ScrollViewer，offset={_scrollViewer.Offset.Y}, viewport={_scrollViewer.Viewport.Height}"
-					);
-					UpdateLoadStatus(_scrollViewer, vm);
-				}
-				else
-				{
-					LogHelper.WriteLogAsync("OnBatchAddingCompleted: 无法找到 ScrollViewer");
-				}
+				UpdateLoadStatus(WallpaperScrollViewer, vm);
 			});
 		}
 	}
@@ -60,57 +43,43 @@ public partial class WallpaperListView : UserControl
 		if (DataContext is not WallpaperListViewModel vm)
 			return;
 
-		// 始终保存 ScrollViewer 引用
-		_scrollViewer = scrollViewer;
-
-		// 如果列表为空，直接返回
 		if (vm.WallpaperListItems.Count == 0)
 			return;
 
-		// 防止在更新加载状态时重复触发
 		if (_isUpdatingLoadStatus)
 			return;
 
-		// 即使在批量添加期间，也要更新可见项的加载状态
 		UpdateLoadStatus(scrollViewer, vm);
 
-		// 只有不在批量添加期间才处理加载更多
 		if (vm.IsBatchAdding)
 			return;
 
-		var offset = scrollViewer.Offset.Y; // 垂直偏移量
-		var viewportHeight = scrollViewer.Viewport.Height; // 视口高度
-		var total = scrollViewer.Extent.Height; // 可滚动内容范围
-		var computeHeight = total - viewportHeight * 2; // 计算高度
+		var offset = scrollViewer.Offset.Y;
+		var viewportHeight = scrollViewer.Viewport.Height;
+		var total = scrollViewer.Extent.Height;
+		var computeHeight = total - viewportHeight * 2;
 
 		if (offset > 0 && offset >= computeHeight)
 		{
-			// 加载更多壁纸
 			vm.LoadNextWallpapersAsync();
 		}
 	}
 
 	private void UpdateLoadStatus(ScrollViewer scrollViewer, WallpaperListViewModel vm)
 	{
-		var offset = scrollViewer.Offset.Y; // 垂直偏移量
-		var viewportHeight = scrollViewer.Viewport.Height; // 视口高度
-		const int itemHeight = 200; // 每个壁纸项的高度（根据WallpaperView的DesignHeight）
+		var offset = scrollViewer.Offset.Y;
+		var viewportHeight = scrollViewer.Viewport.Height;
+		const int itemHeight = 256; // 每个壁纸项的高度约 212px (200 image + 12 margin) + buffer
 
-		// 计算可见项的范围
-		var firstVisibleIndex = Math.Max(0, (int)(offset / itemHeight) - 1); // 减少1个作为缓冲
-		var lastVisibleIndex = Math.Min(vm.WallpaperListItems.Count - 1, (int)((offset + viewportHeight) / itemHeight) + 1); // 增加1个作为缓冲
+		var firstVisibleIndex = Math.Max(0, (int)(offset / itemHeight) - 1);
+		var lastVisibleIndex = Math.Min(vm.WallpaperListItems.Count - 1, (int)((offset + viewportHeight) / itemHeight) + 1);
 
-		LogHelper.WriteLogAsync($"可见项范围：{firstVisibleIndex} - {lastVisibleIndex}");
-
-		// 设置标志，防止重复触发
 		_isUpdatingLoadStatus = true;
 
 		try
 		{
-			// 更新所有项的加载状态
 			for (var i = 0; i < vm.WallpaperListItems.Count; i++)
 			{
-				// 只为可见项设置加载状态为true，其他项设置为false
 				if (i >= firstVisibleIndex && i <= lastVisibleIndex)
 				{
 					vm.LoadNextStatusAsync(i);

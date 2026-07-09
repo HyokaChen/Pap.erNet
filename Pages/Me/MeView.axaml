@@ -1,0 +1,355 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:vm="using:Pap.erNet.ViewModels"
+	mc:Ignorable="d"
+	d:DesignWidth="350"
+	d:DesignHeight="666"
+	x:Class="Pap.erNet.Pages.Me.MeView"
+	x:DataType="vm:MeViewModel"
+	Background="Transparent"
+>
+	<Grid RowDefinitions="Auto,*">
+		<!-- ============ Navigation Bar ============ -->
+		<Border Grid.Row="0" Height="48" Background="Transparent">
+			<Grid ColumnDefinitions="44,*,44" Height="48">
+				<!-- Back Button -->
+				<Button
+					Width="44"
+					Height="44"
+					Background="Transparent"
+					BorderThickness="0"
+					Cursor="Hand"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Command="{Binding NavigateBackCommand}"
+				>
+					<Path
+						Data="M16,4 L8,12 L16,20"
+						Stroke="#FFFFFF"
+						StrokeThickness="2"
+						Fill="Transparent"
+						StrokeLineCap="Round"
+						Width="24"
+						Height="24"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+					/>
+				</Button>
+
+				<!-- Title -->
+				<TextBlock
+					Grid.Column="1"
+					Text="{Binding PageTitleText}"
+					FontSize="18"
+					FontWeight="600"
+					Foreground="#FFFFFF"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+				/>
+
+				<!-- Folder Import Button -->
+				<Button
+					Width="44"
+					Height="44"
+					Grid.Column="2"
+					Background="Transparent"
+					BorderThickness="0"
+					Cursor="Hand"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Command="{Binding ImportWallpapersCommand}"
+				>
+					<Path
+						Data="M4,4 L8,4 L10,6 L18,6 C19.1,6 20,6.9 20,8 L20,18 C20,19.1 19.1,20 18,20 L4,20 C2.9,20 2,19.1 2,18 L2,6 C2,4.9 2.9,4 4,4 Z"
+						Stroke="#A0A0A0"
+						StrokeThickness="1.5"
+						Fill="Transparent"
+						Width="20"
+						Height="20"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+					/>
+				</Button>
+			</Grid>
+		</Border>
+
+		<!-- ============ Scrollable Content ============ -->
+		<ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" Padding="16,0,16,0">
+			<StackPanel Orientation="Vertical" Spacing="0">
+				<!-- ===== Random Wallpaper Control Section ===== -->
+				<Border Background="#2A2A2A" CornerRadius="12" Padding="16" Margin="0,8,0,12">
+					<StackPanel Orientation="Vertical" Spacing="12">
+						<!-- Header row with status badge -->
+						<Grid ColumnDefinitions="*,Auto">
+							<TextBlock Text="当前随机壁纸" FontSize="15" FontWeight="600" Foreground="#FFFFFF" VerticalAlignment="Center" />
+							<Border x:Name="RandomStatusBadge" Grid.Column="1" CornerRadius="4" Padding="8,2" Cursor="Hand" Background="#323232">
+								<TextBlock
+									x:Name="RandomStatusText"
+									Text="{Binding RandomStatusText}"
+									FontSize="12"
+									Foreground="#6E6E6E"
+									HorizontalAlignment="Center"
+								/>
+							</Border>
+						</Grid>
+
+						<!-- Dual preview panels -->
+						<Grid Margin="0,0,0,0">
+							<Grid ColumnDefinitions="*,*,Auto">
+								<!-- Primary Monitor Preview -->
+								<StackPanel Orientation="Vertical" Spacing="8" HorizontalAlignment="Center">
+									<Border Width="120" Height="80" CornerRadius="8" Background="#252525" BorderThickness="2" BorderBrush="#3A3A3A">
+										<Path
+											Data="M4,4 L16,4 C17.1,4 18,4.9 18,6 L18,14 C18,15.1 17.1,16 16,16 L4,16 C2.9,16 2,15.1 2,14 L2,6 C2,4.9 2.9,4 4,4 Z"
+											Stroke="#6E6E6E"
+											StrokeThickness="1.2"
+											Fill="Transparent"
+											Width="24"
+											Height="24"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+										/>
+									</Border>
+									<Button
+										Width="24"
+										Height="24"
+										Background="Transparent"
+										BorderThickness="0"
+										Cursor="Hand"
+										HorizontalAlignment="Center"
+										Command="{Binding DownloadPrimaryCommand}"
+									>
+										<Path
+											Data="M12,4 L12,14 M8,10 L12,14 L16,10 M4,18 L20,18"
+											Stroke="#A0A0A0"
+											StrokeThickness="1.2"
+											Fill="Transparent"
+											StrokeLineCap="Round"
+											Width="16"
+											Height="16"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+										/>
+									</Button>
+								</StackPanel>
+
+								<!-- Spacer -->
+								<Border Grid.Column="1" />
+
+								<!-- Secondary Monitor Preview -->
+								<StackPanel Grid.Column="2" Orientation="Vertical" Spacing="8" HorizontalAlignment="Center">
+									<Border Width="120" Height="80" CornerRadius="8" Background="#252525" BorderThickness="2" BorderBrush="#3A3A3A">
+										<Path
+											Data="M4,4 L16,4 C17.1,4 18,4.9 18,6 L18,14 C18,15.1 17.1,16 16,16 L4,16 C2.9,16 2,15.1 2,14 L2,6 C2,4.9 2.9,4 4,4 Z"
+											Stroke="#6E6E6E"
+											StrokeThickness="1.2"
+											Fill="Transparent"
+											Width="24"
+											Height="24"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+										/>
+									</Border>
+									<Button
+										Width="24"
+										Height="24"
+										Background="Transparent"
+										BorderThickness="0"
+										Cursor="Hand"
+										HorizontalAlignment="Center"
+										Command="{Binding DownloadSecondaryCommand}"
+									>
+										<Path
+											Data="M12,4 L12,14 M8,10 L12,14 L16,10 M4,18 L20,18"
+											Stroke="#A0A0A0"
+											StrokeThickness="1.2"
+											Fill="Transparent"
+											StrokeLineCap="Round"
+											Width="16"
+											Height="16"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+										/>
+									</Button>
+								</StackPanel>
+							</Grid>
+						</Grid>
+					</StackPanel>
+				</Border>
+
+				<!-- ===== Wallpaper Cards List ===== -->
+				<ItemsControl ItemsSource="{Binding WallpaperCards}" Margin="0" Padding="0">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<StackPanel Orientation="Vertical" Spacing="12" />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+					<ItemsControl.ItemTemplate>
+						<DataTemplate x:DataType="vm:WallpaperCardViewModel">
+							<Border CornerRadius="12" Background="#252525" ClipToBounds="True">
+								<Panel>
+									<!-- Image placeholder (实际绑定 WallpaperView 重用) -->
+									<Border Height="200" Background="#252525">
+										<TextBlock
+											Text="{Binding Author}"
+											FontSize="14"
+											Foreground="#A0A0A0"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+										/>
+									</Border>
+
+									<!-- 4K Badge (top-left) -->
+									<Border
+										HorizontalAlignment="Left"
+										VerticalAlignment="Top"
+										Margin="8,8,0,0"
+										Background="#FFFFFF"
+										CornerRadius="4"
+										Padding="6,2"
+										Opacity="0.9"
+										IsVisible="{Binding Is4K}"
+									>
+										<TextBlock Text="4K" FontSize="11" FontWeight="Bold" Foreground="#1E1E1E" />
+									</Border>
+
+									<!-- Delete Button (top-right) -->
+									<Button
+										HorizontalAlignment="Right"
+										VerticalAlignment="Top"
+										Margin="0,8,8,0"
+										Width="32"
+										Height="32"
+										Background="#323232"
+										BorderThickness="0"
+										CornerRadius="6"
+										Cursor="Hand"
+										Opacity="0.9"
+										Command="{Binding DeleteCommand}"
+									>
+										<Path
+											Data="M6,6 L18,18 M18,6 L6,18"
+											Stroke="#FFFFFF"
+											StrokeThickness="1.5"
+											Fill="Transparent"
+											StrokeLineCap="Round"
+											Width="16"
+											Height="16"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+										/>
+									</Button>
+
+									<!-- Bottom Toolbar -->
+									<Border VerticalAlignment="Bottom" Height="40">
+										<Border.Background>
+											<LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+												<GradientStop Color="Transparent" Offset="0" />
+												<GradientStop Color="#99000000" Offset="1" />
+											</LinearGradientBrush>
+										</Border.Background>
+										<Border Height="40" Padding="12,0" Background="Transparent">
+											<Grid ColumnDefinitions="Auto,Auto,*,Auto">
+												<Button
+													Background="#323232"
+													BorderThickness="0"
+													CornerRadius="6"
+													Padding="8,4"
+													Height="28"
+													Cursor="Hand"
+													Command="{Binding SetDesktopCommand}"
+												>
+													<Grid>
+														<Grid ColumnDefinitions="Auto,Auto,Auto">
+															<Path
+																Data="M4,4 L16,4 C17.1,4 18,4.9 18,6 L18,14 C18,15.1 17.1,16 16,16 L4,16 C2.9,16 2,15.1 2,14 L2,6 C2,4.9 2.9,4 4,4 Z M2,16 L18,16 M8,16 L8,20 L12,20 L12,16"
+																Stroke="#FFFFFF"
+																StrokeThickness="1.2"
+																Fill="Transparent"
+																StrokeLineCap="Round"
+																Width="14"
+																Height="14"
+																VerticalAlignment="Center"
+															/>
+															<TextBlock
+																Grid.Column="1"
+																Margin="4,0,0,0"
+																Text="设为桌面"
+																FontSize="13"
+																Foreground="#FFFFFF"
+																VerticalAlignment="Center"
+															/>
+															<Path
+																Grid.Column="2"
+																Margin="4,0,0,0"
+																Data="M4,6 L8,10 L12,6"
+																Stroke="#FFFFFF"
+																StrokeThickness="1.2"
+																Fill="Transparent"
+																StrokeLineCap="Round"
+																Width="10"
+																Height="10"
+																VerticalAlignment="Center"
+															/>
+														</Grid>
+													</Grid>
+												</Button>
+												<Border Grid.Column="2" />
+												<Button
+													Grid.Column="3"
+													Width="28"
+													Height="28"
+													Background="Transparent"
+													BorderThickness="0"
+													CornerRadius="6"
+													Cursor="Hand"
+													Command="{Binding DeleteCommand}"
+												>
+													<Path
+														Data="M6,6 L18,18 M18,6 L6,18"
+														Stroke="#FFFFFF"
+														StrokeThickness="1.2"
+														Fill="Transparent"
+														StrokeLineCap="Round"
+														Width="16"
+														Height="16"
+														HorizontalAlignment="Center"
+														VerticalAlignment="Center"
+													/>
+												</Button>
+											</Grid>
+										</Border>
+									</Border>
+								</Panel>
+							</Border>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+
+				<!-- ===== Empty State ===== -->
+				<StackPanel
+					Orientation="Vertical"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Margin="0,80,0,0"
+					IsVisible="{Binding IsEmpty}"
+				>
+					<Path
+						Data="M4,4 L8,4 L10,6 L18,6 C19.1,6 20,6.9 20,8 L20,18 C20,19.1 19.1,20 18,20 L4,20 C2.9,20 2,19.1 2,18 L2,6 C2,4.9 2.9,4 4,4 Z"
+						Stroke="#6E6E6E"
+						StrokeThickness="1.5"
+						Fill="Transparent"
+						Width="48"
+						Height="48"
+						HorizontalAlignment="Center"
+					/>
+					<TextBlock Text="暂无壁纸" FontSize="16" Foreground="#A0A0A0" HorizontalAlignment="Center" Margin="0,12,0,4" />
+					<TextBlock Text="点击右上角文件夹导入壁纸" FontSize="13" Foreground="#6E6E6E" HorizontalAlignment="Center" />
+				</StackPanel>
+			</StackPanel>
+		</ScrollViewer>
+	</Grid>
+</UserControl>

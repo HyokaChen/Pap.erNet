@@ -1,71 +1,215 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="200"
-             xmlns:vm="using:Pap.erNet.ViewModels"
-             xmlns:asyncImageLoader="using:Pap.erNet.Utils"
-             x:Class="Pap.erNet.Pages.Home.WallpaperView"
-             x:DataType="vm:WallpaperViewModel"
-             >
-    <Panel PointerEntered="GotEnter" PointerExited="GotExit">
-        <Image Width="350" Height="200" Stretch="UniformToFill"
-               asyncImageLoader:ImageLoader.Thumbnail="{Binding ThumbnailSource}"
-			   asyncImageLoader:ImageLoader.LoadStatus ="{Binding IsLoad}"
-               asyncImageLoader:ImageLoader.Source="{Binding ImageSource}"></Image>
-        <Button x:Name="Author" IsVisible="False" FontSize="12" HorizontalAlignment="Center" Classes="hyperlink"
-                VerticalAlignment="Bottom" Margin="0 0 0 24 " 
-                Command="{Binding VisitBrowserCommand}"
-                CommandParameter="{Binding Link}"
-                Content="{Binding Author}">
-            <Button.Styles>
-                <Style Selector="Button.hyperlink">
-                    <Setter Property="Template">
-                        <ControlTemplate>
-                            <TextBlock Text="{TemplateBinding Content}">
-                                <TextBlock.Styles>
-                                    <Style Selector="TextBlock:pointerover">
-                                        <Setter Property="TextDecorations" Value="Underline"></Setter>
-                                    </Style>
-                                </TextBlock.Styles>
-                            </TextBlock>
-                        </ControlTemplate>
-                    </Setter>
-                    <Setter Property="Background" Value="Transparent"></Setter>
-                    <Setter Property="BorderThickness" Value="0"></Setter>
-                </Style>
-            </Button.Styles>
-        </Button>
-		<Border x:Name="SetDeskWallpaper" Background="Black" Width="100" Height="30"
-                HorizontalAlignment="Center"
-                CornerRadius="4"
-                Opacity="0.5"
-                IsVisible="False"
-			    PointerEntered="SetDeskWallpaper_PointerEntered"
-				PointerExited="SetDeskWallpaper_PointerExited"
-				PointerPressed="SetDeskWallpaper_PointerPressed"
-                VerticalAlignment="Center" Margin="0 20 20 0 "
-                >
-			<TextBlock FontSize="14" FontWeight="Bold"
-                Foreground="White" HorizontalAlignment="Center"
-                       VerticalAlignment="Center" Text="设为桌面"></TextBlock>
-		</Border>
-        <Border x:Name="ResolutionRatio" Background="#2b465c" Width="25" Height="25" 
-                HorizontalAlignment="Right" 
-                CornerRadius="4"
-                Opacity="0.8"
-                IsVisible="False"
-                VerticalAlignment="Top" Margin="0 20 20 0 "
-                >
-            <TextBlock FontSize="12" 
-                Foreground="Aquamarine" HorizontalAlignment="Center" 
-                       VerticalAlignment="Center" Text="{Binding ResolutionRatio}"></TextBlock>
-        </Border>
-		<ProgressBar x:Name="DownloadPB"  Height="4"
-					  VerticalAlignment="Bottom"
-					  Foreground="White"
-					  Opacity="0.6"
-					  IsVisible="False"
-					  Minimum="0" Maximum="100" Value="0"/>
-    </Panel>
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	d:DesignWidth="318"
+	d:DesignHeight="200"
+	xmlns:vm="using:Pap.erNet.ViewModels"
+	xmlns:asyncImageLoader="using:Pap.erNet.Utils"
+	x:Class="Pap.erNet.Pages.Home.WallpaperView"
+	x:DataType="vm:WallpaperViewModel"
+>
+	<Border CornerRadius="12" Background="#252525" Margin="16,0,16,12" ClipToBounds="True" PointerEntered="GotEnter" PointerExited="GotExit">
+		<Panel>
+			<!-- Wallpaper Image -->
+			<Image
+				Stretch="UniformToFill"
+				MinHeight="200"
+				asyncImageLoader:ImageLoader.Thumbnail="{Binding ThumbnailSource}"
+				asyncImageLoader:ImageLoader.LoadStatus="{Binding IsLoad}"
+				asyncImageLoader:ImageLoader.Source="{Binding ImageSource}"
+			/>
+
+			<!-- Gradient Overlay at bottom (for toolbar readability) -->
+			<Border VerticalAlignment="Bottom" Height="80">
+				<Border.Background>
+					<LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+						<GradientStop Color="Transparent" Offset="0" />
+						<GradientStop Color="#99000000" Offset="1" />
+					</LinearGradientBrush>
+				</Border.Background>
+			</Border>
+
+			<!-- ==================== Bottom Toolbar ==================== -->
+			<Border VerticalAlignment="Bottom" Height="40" Padding="12,0" Background="Transparent">
+				<Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+					<!-- 设为桌面 Button -->
+					<Button
+						x:Name="SetDesktopBtn"
+						Background="#323232"
+						BorderThickness="0"
+						CornerRadius="6"
+						Padding="8,0,4,0"
+						Height="28"
+						Cursor="Hand"
+						HorizontalAlignment="Left"
+						PointerEntered="ToolbarBtn_PointerEntered"
+						PointerExited="ToolbarBtn_PointerExited"
+					>
+						<Grid ColumnDefinitions="Auto,Auto">
+							<!-- Monitor icon -->
+							<Path
+								Data="M4,4 L16,4 C17.1,4 18,4.9 18,6 L18,14 C18,15.1 17.1,16 16,16 L4,16 C2.9,16 2,15.1 2,14 L2,6 C2,4.9 2.9,4 4,4 Z M2,16 L18,16 M8,16 L8,20 L12,20 L12,16"
+								Stroke="#FFFFFF"
+								StrokeThickness="1.2"
+								Fill="Transparent"
+								StrokeLineCap="Round"
+								Width="14"
+								Height="14"
+								VerticalAlignment="Center"
+							/>
+							<!-- Text -->
+							<TextBlock Grid.Column="1" Margin="4,0,0,0" Text="设为桌面" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+						</Grid>
+					</Button>
+
+					<!-- Chevron Down Dropdown -->
+					<Button
+						x:Name="SetDesktopDropdown"
+						Grid.Column="1"
+						Background="#323232"
+						BorderThickness="0"
+						CornerRadius="6"
+						Width="20"
+						Height="28"
+						Padding="2,0"
+						Margin="2,0,8,0"
+						Cursor="Hand"
+						HorizontalAlignment="Left"
+						PointerEntered="ToolbarBtn_PointerEntered"
+						PointerExited="ToolbarBtn_PointerExited"
+					>
+						<Path
+							Data="M6,8 L10,12 L14,8"
+							Stroke="#FFFFFF"
+							StrokeThickness="1.5"
+							Fill="Transparent"
+							StrokeLineCap="Round"
+							Width="12"
+							Height="12"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+						/>
+					</Button>
+
+					<!-- Spacer (fills remaining space) -->
+					<Border Grid.Column="2" />
+
+					<!-- Download Button -->
+					<Button
+						Grid.Column="3"
+						x:Name="DownloadBtn"
+						Width="28"
+						Height="28"
+						Background="Transparent"
+						BorderThickness="0"
+						CornerRadius="6"
+						Cursor="Hand"
+						Margin="0,0,4,0"
+						PointerEntered="ToolbarBtn_PointerEntered"
+						PointerExited="ToolbarBtn_PointerExited"
+						Click="OnDownloadClick"
+					>
+						<Path
+							Data="M12,4 L12,16 M8,12 L12,16 L16,12 M4,18 L20,18"
+							Stroke="#FFFFFF"
+							StrokeThickness="1.5"
+							Fill="Transparent"
+							StrokeLineCap="Round"
+							Width="18"
+							Height="18"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+						/>
+					</Button>
+
+					<!-- Favorite Button -->
+					<Button
+						Grid.Column="4"
+						x:Name="FavoriteBtn"
+						Width="28"
+						Height="28"
+						Background="Transparent"
+						BorderThickness="0"
+						CornerRadius="6"
+						Cursor="Hand"
+						PointerEntered="ToolbarBtn_PointerEntered"
+						PointerExited="ToolbarBtn_PointerExited"
+					>
+						<!-- Star icon (outline) -->
+						<Path
+							Data="M12,3 L14.5,8 L20,8.7 L16,12.5 L17,18 L12,15.3 L7,18 L8,12.5 L4,8.7 L9.5,8 Z"
+							Stroke="#FFFFFF"
+							StrokeThickness="1.2"
+							Fill="Transparent"
+							Width="18"
+							Height="18"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+						/>
+					</Button>
+				</Grid>
+			</Border>
+
+			<!-- ==================== 4K Badge (Top-Left) ==================== -->
+			<Border
+				x:Name="QualityBadge"
+				HorizontalAlignment="Left"
+				VerticalAlignment="Top"
+				Margin="8,8,0,0"
+				Background="#FFFFFF"
+				CornerRadius="4"
+				Padding="6,2"
+				Opacity="0"
+			>
+				<TextBlock Text="4K" FontSize="11" FontWeight="Bold" Foreground="#1E1E1E" />
+			</Border>
+
+			<!-- ==================== Author (Top-Right area) ==================== -->
+			<Button
+				x:Name="AuthorBtn"
+				HorizontalAlignment="Right"
+				VerticalAlignment="Top"
+				Margin="0,8,8,0"
+				FontSize="12"
+				Foreground="#FFFFFF"
+				Background="Transparent"
+				BorderThickness="0"
+				Opacity="0"
+				Cursor="Hand"
+				Command="{Binding VisitBrowserCommand}"
+				CommandParameter="{Binding Link}"
+				Content="{Binding Author}"
+			/>
+
+			<!-- ==================== Resolution Badge (hidden by default) ==================== -->
+			<Border
+				x:Name="ResolutionBadge"
+				HorizontalAlignment="Right"
+				VerticalAlignment="Top"
+				Margin="0,40,8,0"
+				Background="#2b465c"
+				CornerRadius="4"
+				Padding="6,3"
+				Opacity="0"
+			>
+				<TextBlock Text="{Binding ResolutionRatio}" FontSize="11" Foreground="Aquamarine" />
+			</Border>
+
+			<!-- ==================== Download Progress Bar ==================== -->
+			<ProgressBar
+				x:Name="DownloadPB"
+				Height="3"
+				VerticalAlignment="Bottom"
+				Foreground="#FFFFFF"
+				Opacity="0.6"
+				IsVisible="False"
+				Minimum="0"
+				Maximum="100"
+				Value="0"
+			/>
+		</Panel>
+	</Border>
 </UserControl>
