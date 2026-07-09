@@ -14,6 +14,9 @@ public class WallpaperListService
 	/// </summary>
 	public async IAsyncEnumerable<Wallpaper> GetWallpapersAsync(string listId)
 	{
+		// 预解析 CDN 域名（首次调用时会请求 status 接口）
+		await CdnResolver.GetResolvedCdnHostAsync().ConfigureAwait(false);
+
 		var graphQlResponse = await RequestUtil.GetResponse(listId);
 
 		var after = graphQlResponse!.Data.Photos.After;
@@ -22,18 +25,21 @@ public class WallpaperListService
 		var entries = graphQlResponse.Data.Photos.Entries;
 		foreach (var entry in entries)
 		{
+			var thumbUrl = CdnResolver.ResolveCdnUrl(entry.Urls.Thumb.Replace("http://", "https://"));
 			if (entry.Blurhash == null)
 			{
-				var sourceImage = await Image.LoadAsync<Rgba32>(entry.Urls.Thumb);
+				var sourceImage = await Image.LoadAsync<Rgba32>(thumbUrl);
 				entry.Blurhash = Blurhasher.Encode(sourceImage, 4, 3);
-				Debug.WriteLine($"BlurHash(${entry.Id}) == null:::{entry.Urls.Thumb}");
+				Debug.WriteLine($"BlurHash(${entry.Id}) == null:::{thumbUrl}");
 			}
 			var image = Blurhasher.Decode(entry.Blurhash, 560, 320);
 			var thumbnail = image.ToBase64String(SixLabors.ImageSharp.Formats.Webp.WebpFormat.Instance);
+			var rawUrl = entry.Urls.Thumb.Replace("http://", "https://");
+			var resolvedUrl = CdnResolver.ResolveCdnUrl(rawUrl);
 			var res = new Wallpaper
 			{
 				Id = entry.Id,
-				Url = entry.Urls.Thumb.Replace("http://", "https://"),
+				Url = resolvedUrl,
 				Link = entry.Link,
 				Author = entry.Heading,
 				Thumbnail = thumbnail,

@@ -3,6 +3,7 @@
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:lucide="clr-namespace:Lucide.Avalonia;assembly=Lucide.Avalonia"
 	xmlns:vm="using:Pap.erNet.ViewModels"
 	mc:Ignorable="d"
 	d:DesignWidth="350"
@@ -168,16 +169,12 @@
 								<Border Grid.Column="1" Background="#323232" CornerRadius="8" Padding="8,6" Cursor="Hand" MinWidth="100">
 									<Grid ColumnDefinitions="Auto,Auto">
 										<TextBlock Text="{Binding SelectedInterval}" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
-										<Path
+										<lucide:LucideIcon
 											Grid.Column="1"
 											Margin="4,0,0,0"
-											Data="M4,6 L8,10 L12,6"
-											Stroke="#A0A0A0"
-											StrokeThickness="1.5"
-											Fill="Transparent"
-											StrokeLineCap="Round"
-											Width="12"
-											Height="12"
+											Kind="ChevronDown"
+											Size="12"
+											Foreground="#A0A0A0"
 											VerticalAlignment="Center"
 										/>
 									</Grid>
@@ -532,16 +529,12 @@
 								<Border Grid.Column="1" Background="#323232" CornerRadius="8" Padding="8,6" Cursor="Hand" MinWidth="100">
 									<Grid ColumnDefinitions="Auto,Auto">
 										<TextBlock Text="{Binding SelectedLanguage}" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
-										<Path
+										<lucide:LucideIcon
 											Grid.Column="1"
 											Margin="4,0,0,0"
-											Data="M4,6 L8,10 L12,6"
-											Stroke="#A0A0A0"
-											StrokeThickness="1.5"
-											Fill="Transparent"
-											StrokeLineCap="Round"
-											Width="12"
-											Height="12"
+											Kind="ChevronDown"
+											Size="12"
+											Foreground="#A0A0A0"
 											VerticalAlignment="Center"
 										/>
 									</Grid>

@@ -1,6 +1,5 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
-using Pap.erNet.Models;
 using Pap.erNet.Utils;
 using ReactiveUI;
 
@@ -26,6 +25,17 @@ public class HeaderWithWallpaperListViewModel : ViewModelBase
 	public required string ListId { get; set; }
 
 	public required WallpaperListViewModel WallpaperListViewModel { get; set; }
+
+	private bool _isSelected;
+
+	/// <summary>
+	/// 当前 Tab 是否被选中
+	/// </summary>
+	public bool IsSelected
+	{
+		get => _isSelected;
+		set => this.RaiseAndSetIfChanged(ref _isSelected, value);
+	}
 }
 
 public class MainWindowViewModel : ViewModelBase
@@ -42,6 +52,10 @@ public class MainWindowViewModel : ViewModelBase
 	public MainWindowViewModel()
 	{
 		RefreshCurrentTabCommand = ReactiveCommand.CreateFromTask(RefreshCurrentTabAsync);
+
+		// 监听子页面返回事件
+		Me.NavigationBackRequested += () => NavigateTo(PageType.Home);
+		SettingsViewModel.NavigationBackRequested += () => NavigateTo(PageType.Home);
 	}
 
 	/// <summary>
@@ -64,6 +78,11 @@ public class MainWindowViewModel : ViewModelBase
 		set
 		{
 			this.RaiseAndSetIfChanged(ref _selectedTabIndex, value);
+			// 同步更新所有 Tab 的选中状态
+			for (var i = 0; i < WallpaperListViewModels.Count; i++)
+			{
+				WallpaperListViewModels[i].IsSelected = i == value;
+			}
 			// 切换 Tab 时加载对应分类的壁纸
 			if (value >= 0 && value < WallpaperListViewModels.Count)
 			{
@@ -146,6 +165,9 @@ public class MainWindowViewModel : ViewModelBase
 			}
 
 			LogHelper.WriteLogAsync($"MainWindowViewModel.InitializeListsAsync: 成功加载 {WallpaperListViewModels.Count} 个分类");
+
+			// 自动加载第一个 Tab 的壁纸
+			LoadFirstTabWallpapers();
 		}
 		catch (Exception ex)
 		{
@@ -157,6 +179,19 @@ public class MainWindowViewModel : ViewModelBase
 	/// <summary>
 	/// 降级方案：接口不可用时使用硬编码的默认分类
 	/// </summary>
+	/// <summary>
+	/// 加载第一个 Tab 的壁纸
+	/// </summary>
+	private void LoadFirstTabWallpapers()
+	{
+		if (WallpaperListViewModels.Count > 0)
+		{
+			LogHelper.WriteLogAsync("MainWindowViewModel: 自动加载第一个 Tab 壁纸");
+			WallpaperListViewModels[0].IsSelected = true;
+			WallpaperListViewModels[0].WallpaperListViewModel.LoadWallpapersAsync();
+		}
+	}
+
 	private void FallbackToDefaults()
 	{
 		WallpaperListViewModels.Clear();
@@ -184,5 +219,8 @@ public class MainWindowViewModel : ViewModelBase
 				WallpaperListViewModel = new WallpaperListViewModel { ListId = "2245081321414066176" },
 			}
 		);
+
+		// 降级后也自动加载第一个 Tab
+		LoadFirstTabWallpapers();
 	}
 }

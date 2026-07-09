@@ -63,6 +63,8 @@ public static class RequestUtil
 				SslOptions = new SslClientAuthenticationOptions
 				{
 					RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true,
+					EnabledSslProtocols =
+						System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13,
 				},
 			}
 		)

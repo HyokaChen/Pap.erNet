@@ -96,15 +96,15 @@ public static class DeviceUtil
 	}
 
 	/// <summary>
-	/// 图片下载使用的 User-Agent（浏览器风格 Chrome 103 UA）
+	/// 图片下载使用的 User-Agent（浏览器风格，使用较新的 Chrome 版本以兼容 CDN SSL 策略）
 	/// </summary>
 	public static string GetImageDownloadUserAgent()
 	{
 		if (IsMacOS)
-			return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36";
+			return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 		if (IsWindows)
-			return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36";
-		return "Mozilla/5.0 (Wayland; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36";
+			return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+		return "Mozilla/5.0 (Wayland; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 	}
 
 	/// <summary>

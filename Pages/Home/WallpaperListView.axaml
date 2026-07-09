@@ -5,34 +5,38 @@
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	mc:Ignorable="d"
 	d:DesignWidth="350"
-	d:DesignHeight="570"
+	d:DesignHeight="600"
 	x:Class="Pap.erNet.Pages.Home.WallpaperListView"
 	xmlns:vm="using:Pap.erNet.ViewModels"
 	x:DataType="vm:WallpaperListViewModel"
 	xmlns:item="using:Pap.erNet.Pages.Home"
 	Background="Transparent"
 >
-	<!-- Scrollable wallpaper list -->
-	<ScrollViewer
-		x:Name="WallpaperScrollViewer"
-		HorizontalScrollBarVisibility="Hidden"
-		VerticalScrollBarVisibility="Hidden"
-		IsScrollInertiaEnabled="True"
-		IsScrollChainingEnabled="True"
-		IsDeferredScrollingEnabled="True"
-		ScrollChanged="ScrollViewer_ScrollChanged"
-	>
-		<ItemsControl ItemsSource="{Binding WallpaperListItems}" Margin="0">
-			<ItemsControl.ItemsPanel>
-				<ItemsPanelTemplate>
-					<VirtualizingStackPanel Orientation="Vertical" />
-				</ItemsPanelTemplate>
-			</ItemsControl.ItemsPanel>
-			<ItemsControl.ItemTemplate>
-				<DataTemplate>
-					<item:WallpaperView DataContext="{Binding}" />
-				</DataTemplate>
-			</ItemsControl.ItemTemplate>
-		</ItemsControl>
-	</ScrollViewer>
+	<ItemsControl x:Name="WallpaperListIC" Height="600" ItemsSource="{Binding WallpaperListItems}">
+		<ItemsControl.ItemsPanel>
+			<ItemsPanelTemplate>
+				<VirtualizingStackPanel Orientation="Vertical" />
+			</ItemsPanelTemplate>
+		</ItemsControl.ItemsPanel>
+		<ItemsControl.Template>
+			<ControlTemplate TargetType="ItemsControl">
+				<ScrollViewer
+					Padding="{TemplateBinding Padding}"
+					HorizontalScrollBarVisibility="Hidden"
+					IsScrollInertiaEnabled="False"
+					IsScrollChainingEnabled="False"
+					IsDeferredScrollingEnabled="True"
+					ScrollChanged="ScrollViewer_ScrollChanged"
+					VerticalScrollBarVisibility="Hidden"
+				>
+					<ItemsPresenter />
+				</ScrollViewer>
+			</ControlTemplate>
+		</ItemsControl.Template>
+		<ItemsControl.ItemTemplate>
+			<DataTemplate>
+				<item:WallpaperView DataContext="{Binding}"></item:WallpaperView>
+			</DataTemplate>
+		</ItemsControl.ItemTemplate>
+	</ItemsControl>
 </UserControl>

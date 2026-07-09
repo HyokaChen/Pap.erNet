@@ -1,3 +1,4 @@
+using System.Security.Authentication;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -40,6 +41,9 @@ public partial class App : Application
 				{
 					try
 					{
+						// 步骤0: 预解析 CDN 域名（后台异步，不阻塞）
+						CdnResolver.PreResolve();
+
 						// 步骤1: 认证
 						var authResult = await AuthService.Instance.AuthenticateAsync();
 						LogHelper.WriteLogAsync($"App: 认证结果 = {authResult}");
@@ -107,6 +111,8 @@ public partial class App : Application
 					SslOptions = new System.Net.Security.SslClientAuthenticationOptions
 					{
 						RemoteCertificateValidationCallback = (_, _, _, _) => true,
+						EnabledSslProtocols =
+							System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13,
 					},
 					AutomaticDecompression =
 						System.Net.DecompressionMethods.GZip

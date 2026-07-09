@@ -55,7 +55,11 @@ public class BaseWebImageLoader : IAsyncImageLoader
 			UseProxy = false,
 			MaxConnectionsPerServer = 10,
 			AllowAutoRedirect = true,
-			SslOptions = new SslClientAuthenticationOptions { RemoteCertificateValidationCallback = (_, _, _, _) => true },
+			SslOptions = new SslClientAuthenticationOptions
+			{
+				RemoteCertificateValidationCallback = (_, _, _, _) => true,
+				EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13,
+			},
 			AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
 			PooledConnectionLifetime = TimeSpan.FromMinutes(5),
 			PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
@@ -152,8 +156,9 @@ public class BaseWebImageLoader : IAsyncImageLoader
 				// 阶段1：发送请求并获取响应头（30秒超时，给慢速连接更多时间）
 				using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 				using var request = new HttpRequestMessage(HttpMethod.Get, url);
-				request.Headers.Host = "c3.wuse.co";
-				// 显式启用 Keep-Alive，复用连接
+				// 注意：不硬编码 Host 头，让 HttpClient 根据 URL 自动设置
+				// 硬编码 Host 会导致 HTTPS SNI 不匹配，引发 SSL 握手失败
+				// 仅当明确需要覆盖时才设置: request.Headers.Host = "c3.wuse.co";
 				request.Headers.ConnectionClose = false;
 
 				LogHelper.WriteLogAsync($"[Network] 发送请求: {url}");
