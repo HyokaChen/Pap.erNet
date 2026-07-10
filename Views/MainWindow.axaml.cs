@@ -31,35 +31,57 @@ public partial class MainWindow : Window
 	private void OnWindowLoaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
 	{
 		ApplyLogoCutout();
+		LayoutUpdated += (_, _) => ApplyLogoCutout();
 	}
 
 	/// <summary>
 	/// 使用 CombinedGeometry + Clip 实现 logo 镂空效果
 	/// 原理：从 header 的矩形区域中 Exclude 掉文字的矢量几何体，
-	/// 形成文字形状的"洞"，壁纸内容从洞中穿透显示
+	/// 形成文字形状的"洞"，壁纸内容从洞中穿透显示。
+	/// 自动检测 BuildGeometry 的 baseline 偏移并修正，确保跨平台一致性。
 	/// </summary>
 	private void ApplyLogoCutout()
 	{
-		if (HeaderMask == null)
+		if (HeaderMask == null || LogoText == null)
 			return;
 
-		var headerWidth = Bounds.Width;
-		var headerHeight = 56.0;
+		var headerWidth = HeaderMask.Bounds.Width;
+		var headerHeight = HeaderMask.Bounds.Height;
 
-		// 1. 用 FormattedText 获取 "pap.er" 的矢量几何体
+		if (headerWidth <= 0 || headerHeight <= 0)
+			return;
+
 		var formattedText = new FormattedText(
 			"pap.er",
 			CultureInfo.CurrentCulture,
 			FlowDirection.LeftToRight,
-			new Typeface(FontFamily.Default, FontStyle.Normal, FontWeight.Bold),
-			52.0,
+			new Typeface(LogoText.FontFamily ?? FontFamily.Default, LogoText.FontStyle, LogoText.FontWeight),
+			LogoText.FontSize,
 			Brushes.Black
 		);
 
-		// 文字位置：Padding="24,16,16,0" → 左边距24, 上边距16
-		var textGeometry = formattedText.BuildGeometry(new Point(24, 8));
+		var transform = LogoText.TransformToVisual(HeaderMask);
+		if (transform == null)
+			return;
 
-		// 2. 创建 header 大小的矩形
+		var origin = new Point(0, 0).Transform(transform.Value);
+
+		// 检测 BuildGeometry 的 origin 是 baseline 还是 top-left
+		// 若 Geometry.Bounds.Top < 0，则 origin 被当作 baseline
+		var testGeometry = formattedText.BuildGeometry(new Point(0, 0));
+		var testBounds = testGeometry?.Bounds;
+		var baselineOffset = (testBounds.HasValue && testBounds.Value.Top < 0) ? -testBounds.Value.Top : 0;
+
+		var textGeometry = formattedText.BuildGeometry(new Point(origin.X, origin.Y + baselineOffset));
+
+		// 确保文字几何体不超出 header 区域，避免底部被裁断
+		var textBounds = textGeometry?.Bounds;
+		if (textBounds.HasValue && textBounds.Value.Bottom > headerHeight && textGeometry != null)
+		{
+			var translateY = headerHeight - textBounds.Value.Bottom;
+			textGeometry.Transform = new TranslateTransform(0, translateY);
+		}
+
 		var rectGeometry = new RectangleGeometry(new Rect(0, 0, headerWidth, headerHeight));
 
 		// 3. 从矩形中挖掉文字形状（Exclude: A - B）
