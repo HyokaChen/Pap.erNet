@@ -175,9 +175,6 @@ public class MeViewModel : ViewModelBase
 		ImportWallpapersCommand = ReactiveCommand.Create(ImportWallpapers);
 		DownloadPrimaryCommand = ReactiveCommand.Create(DownloadPrimary);
 		DownloadSecondaryCommand = ReactiveCommand.Create(DownloadSecondary);
-
-		// 加载示例数据（后续替换为真实数据源）
-		LoadSampleData();
 	}
 
 	/// <summary>请求导航回首页事件</summary>
@@ -213,50 +210,6 @@ public class MeViewModel : ViewModelBase
 	{
 		LogHelper.WriteLogAsync("MeViewModel: 下载副屏壁纸");
 		// TODO: 下载当前副屏壁纸
-	}
-
-	/// <summary>
-	/// 加载示例壁纸数据（开发阶段使用）
-	/// </summary>
-	private void LoadSampleData()
-	{
-		var samples = new[]
-		{
-			new Wallpaper
-			{
-				Id = "1",
-				Url = "https://c3.wuse.co/thumb/sample1.jpg",
-				Thumbnail = "",
-				ResolutionRatio = "3840x2160",
-				Author = "摄影师A",
-				Link = "https://example.com/1",
-			},
-			new Wallpaper
-			{
-				Id = "2",
-				Url = "https://c3.wuse.co/thumb/sample2.jpg",
-				Thumbnail = "",
-				ResolutionRatio = "2560x1440",
-				Author = "摄影师B",
-				Link = "https://example.com/2",
-			},
-			new Wallpaper
-			{
-				Id = "3",
-				Url = "https://c3.wuse.co/thumb/sample3.jpg",
-				Thumbnail = "",
-				ResolutionRatio = "3840x2160",
-				Author = "摄影师C",
-				Link = "https://example.com/3",
-			},
-		};
-
-		foreach (var sample in samples)
-		{
-			WallpaperCards.Add(new WallpaperCardViewModel(sample));
-		}
-
-		TotalCount = WallpaperCards.Count;
 	}
 
 	#endregion

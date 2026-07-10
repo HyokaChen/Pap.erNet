@@ -13,42 +13,44 @@
 	Background="Transparent"
 >
 	<Grid RowDefinitions="Auto,*">
-		<!-- ============ Navigation Bar ============ -->
+		<!-- ============ Navigation Bar (固定在顶部) ============ -->
 		<Border Grid.Row="0" Height="48" Background="Transparent">
 			<Grid ColumnDefinitions="44,*,44" Height="48">
 				<!-- Back Button -->
 				<Button
 					Width="44"
 					Height="44"
+					Padding="0"
 					Background="Transparent"
 					BorderThickness="0"
 					Cursor="Hand"
 					HorizontalAlignment="Center"
 					VerticalAlignment="Center"
 					Command="{Binding NavigateBackCommand}"
+					Foreground="#A0A0A0"
 				>
-					<Path
-						Data="M16,4 L8,12 L16,20"
-						Stroke="#FFFFFF"
-						StrokeThickness="2"
-						Fill="Transparent"
-						StrokeLineCap="Round"
-						Width="24"
-						Height="24"
-						HorizontalAlignment="Center"
-						VerticalAlignment="Center"
-					/>
+					<lucide:LucideIcon Kind="ChevronLeft" Size="22" HorizontalAlignment="Center" VerticalAlignment="Center" />
+					<Button.Styles>
+						<Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+							<Setter Property="Background" Value="Transparent" />
+						</Style>
+						<Style Selector="Button:pointerover">
+							<Setter Property="Foreground" Value="#FFFFFF" />
+						</Style>
+					</Button.Styles>
 				</Button>
 
-				<!-- Title (centered) -->
+				<!-- 折叠后的小标题（滚动后显示） -->
 				<TextBlock
+					x:Name="CollapsedTitle"
 					Grid.Column="1"
 					Text="pap.er"
-					FontSize="18"
+					FontSize="16"
 					FontWeight="600"
 					Foreground="#FFFFFF"
 					HorizontalAlignment="Center"
 					VerticalAlignment="Center"
+					Opacity="0"
 				/>
 
 				<!-- Quit Button -->
@@ -56,607 +58,608 @@
 					Grid.Column="2"
 					Width="44"
 					Height="44"
+					Padding="0"
 					Background="Transparent"
 					BorderThickness="0"
 					Cursor="Hand"
 					HorizontalAlignment="Center"
 					VerticalAlignment="Center"
 					Command="{Binding QuitAppCommand}"
+					Foreground="#A0A0A0"
 				>
-					<Path
-						Data="M13,4 L13,14 M9,8 L13,4 L17,8 M6,16 L20,16"
-						Stroke="#A0A0A0"
-						StrokeThickness="1.5"
-						Fill="Transparent"
-						StrokeLineCap="Round"
-						Width="20"
-						Height="20"
-						HorizontalAlignment="Center"
-						VerticalAlignment="Center"
-					/>
+					<lucide:LucideIcon Kind="Power" Size="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+					<Button.Styles>
+						<Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+							<Setter Property="Background" Value="Transparent" />
+						</Style>
+						<Style Selector="Button:pointerover">
+							<Setter Property="Foreground" Value="#FFFFFF" />
+						</Style>
+					</Button.Styles>
 				</Button>
 			</Grid>
 		</Border>
 
 		<!-- ============ Scrollable Content ============ -->
-		<ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" Padding="16,8,16,0">
-			<StackPanel Orientation="Vertical" Spacing="12">
-				<!-- ===== Section 1: 随机壁纸 ===== -->
-				<Border Background="#2A2A2A" CornerRadius="12" Padding="16">
-					<StackPanel Orientation="Vertical" Spacing="0">
-						<!-- Section Header -->
-						<Grid Margin="0,0,0,12">
-							<Grid ColumnDefinitions="32,Auto">
-								<Border
-									Width="32"
-									Height="32"
-									CornerRadius="8"
-									Background="#323232"
-									HorizontalAlignment="Center"
-									VerticalAlignment="Center"
-								>
-									<Path
-										Data="M12,4 C12,4 8,8 8,12 C8,16 12,20 12,20 C12,20 16,16 16,12 C16,8 12,4 12,4 Z"
-										Stroke="#A0A0A0"
-										StrokeThickness="1.5"
-										Fill="Transparent"
-										StrokeLineCap="Round"
-										Width="20"
-										Height="20"
+		<ScrollViewer
+			x:Name="ContentScrollViewer"
+			Grid.Row="1"
+			HorizontalScrollBarVisibility="Hidden"
+			VerticalScrollBarVisibility="Hidden"
+			ScrollChanged="OnScrollChanged"
+		>
+			<StackPanel Orientation="Vertical">
+				<!-- 大标题区域（滚动后折叠） -->
+				<TextBlock
+					x:Name="LargeTitle"
+					Text="pap.er"
+					FontSize="28"
+					FontWeight="Bold"
+					LetterSpacing="4"
+					Foreground="#FFFFFF"
+					HorizontalAlignment="Center"
+					Margin="0,0,0,16"
+				/>
+
+				<!-- 内容区域 -->
+				<StackPanel Orientation="Vertical" Spacing="12" Margin="16,0,16,0">
+					<!-- ===== Section 1: 随机壁纸 ===== -->
+					<Border Background="#2A2A2A" CornerRadius="12" Padding="16">
+						<StackPanel Orientation="Vertical" Spacing="0">
+							<!-- Section Header -->
+							<Grid Margin="0,0,0,12">
+								<Grid ColumnDefinitions="32,Auto">
+									<Border
+										Width="32"
+										Height="32"
+										CornerRadius="8"
+										Background="#323232"
 										HorizontalAlignment="Center"
 										VerticalAlignment="Center"
-									/>
-								</Border>
-								<TextBlock
-									Grid.Column="1"
-									Margin="12,0,0,0"
-									Text="随机壁纸"
-									FontSize="15"
-									FontWeight="600"
-									Foreground="#FFFFFF"
-									VerticalAlignment="Center"
-								/>
-							</Grid>
-						</Grid>
-
-						<!-- Toggle: 开启自动换壁纸 -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="开启自动换壁纸" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Button
-									Grid.Column="1"
-									Width="44"
-									Height="24"
-									Background="Transparent"
-									BorderThickness="0"
-									Padding="0"
-									Cursor="Hand"
-									x:Name="AutoChangeToggle"
-									Command="{Binding ToggleAutoChangeWallpaperCommand}"
-								>
-									<Border Width="44" Height="24" CornerRadius="12" Background="#323232">
-										<Border
-											Width="20"
-											Height="20"
-											CornerRadius="10"
-											Background="#FFFFFF"
-											HorizontalAlignment="Left"
-											Margin="2,0,0,0"
-											VerticalAlignment="Center"
-										/>
-
-										<Border.Styles>
-											<Style Selector="Border">
-												<Setter Property="Background" Value="#323232" />
-											</Style>
-										</Border.Styles>
-									</Border>
-									<!-- Thumb position follow -->
-									<Button.Styles>
-										<Style Selector="Button /template/ ContentPresenter">
-											<Setter Property="HorizontalContentAlignment" Value="Stretch" />
-											<Setter Property="VerticalContentAlignment" Value="Stretch" />
-										</Style>
-									</Button.Styles>
-								</Button>
-							</Grid>
-						</Border>
-
-						<!-- Dropdown: 间隔 -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="间隔" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Border Grid.Column="1" Background="#323232" CornerRadius="8" Padding="8,6" Cursor="Hand" MinWidth="100">
-									<Grid ColumnDefinitions="Auto,Auto">
-										<TextBlock Text="{Binding SelectedInterval}" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									>
 										<lucide:LucideIcon
-											Grid.Column="1"
-											Margin="4,0,0,0"
-											Kind="ChevronDown"
-											Size="12"
+											Kind="Images"
+											Size="18"
 											Foreground="#A0A0A0"
-											VerticalAlignment="Center"
-										/>
-									</Grid>
-								</Border>
-							</Grid>
-						</Border>
-
-						<!-- Segmented Control: 来源 -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="来源" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Border Grid.Column="1" Background="#323232" CornerRadius="8" Padding="2">
-									<StackPanel Orientation="Horizontal" Spacing="2">
-										<Button
-											x:Name="OnlineSourceBtn"
-											Background="#4A90D9"
-											CornerRadius="6"
-											Padding="12,6"
-											Cursor="Hand"
-											BorderThickness="0"
-											Command="{Binding SwitchToOnlineSourceCommand}"
-										>
-											<TextBlock Text="在线" FontSize="13" Foreground="#FFFFFF" />
-										</Button>
-										<Button
-											x:Name="LocalSourceBtn"
-											Background="Transparent"
-											CornerRadius="6"
-											Padding="12,6"
-											Cursor="Hand"
-											BorderThickness="0"
-											Command="{Binding SwitchToLocalSourceCommand}"
-										>
-											<TextBlock Text="壁纸库" FontSize="13" Foreground="#A0A0A0" />
-										</Button>
-									</StackPanel>
-								</Border>
-							</Grid>
-						</Border>
-
-						<!-- Thumbnail Row: 最近 -->
-						<Border Margin="0,8,0,0">
-							<StackPanel Orientation="Vertical" Spacing="6">
-								<TextBlock Text="最近" FontSize="13" Foreground="#A0A0A0" />
-								<StackPanel Orientation="Horizontal" Spacing="8">
-									<Border Width="80" Height="60" CornerRadius="8" Background="#323232">
-										<TextBlock Text="暂无" FontSize="12" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
-									</Border>
-									<Border Width="80" Height="60" CornerRadius="8" Background="#323232">
-										<TextBlock Text="暂无" FontSize="12" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
-									</Border>
-								</StackPanel>
-							</StackPanel>
-						</Border>
-
-						<!-- Toggle: 主屏幕与外接屏幕相同壁纸 -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="主屏幕与外接屏幕相同壁纸" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Button
-									Grid.Column="1"
-									Width="44"
-									Height="24"
-									Background="Transparent"
-									BorderThickness="0"
-									Padding="0"
-									Cursor="Hand"
-									x:Name="MirrorDisplayToggle"
-									Command="{Binding ToggleMirrorDisplaysCommand}"
-								>
-									<Border Width="44" Height="24" CornerRadius="12" Background="#323232">
-										<Border
-											Width="20"
-											Height="20"
-											CornerRadius="10"
-											Background="#FFFFFF"
-											HorizontalAlignment="Left"
-											Margin="2,0,0,0"
+											HorizontalAlignment="Center"
 											VerticalAlignment="Center"
 										/>
 									</Border>
-								</Button>
-							</Grid>
-						</Border>
-					</StackPanel>
-				</Border>
-
-				<!-- ===== Section 2: 壁纸库 ===== -->
-				<Border Background="#2A2A2A" CornerRadius="12" Padding="16">
-					<StackPanel Orientation="Vertical" Spacing="0">
-						<!-- Section Header -->
-						<Grid Margin="0,0,0,12">
-							<Grid ColumnDefinitions="32,Auto">
-								<Border
-									Width="32"
-									Height="32"
-									CornerRadius="8"
-									Background="#323232"
-									HorizontalAlignment="Center"
-									VerticalAlignment="Center"
-								>
-									<Path
-										Data="M4,4 L8,4 L10,6 L16,6 C17.1,6 18,6.9 18,8 L18,18 C18,19.1 17.1,20 16,20 L4,20 C2.9,20 2,19.1 2,18 L2,6 C2,4.9 2.9,4 4,4 Z"
-										Stroke="#A0A0A0"
-										StrokeThickness="1.5"
-										Fill="Transparent"
-										Width="20"
-										Height="20"
-										HorizontalAlignment="Center"
-										VerticalAlignment="Center"
-									/>
-								</Border>
-								<TextBlock
-									Grid.Column="1"
-									Margin="12,0,0,0"
-									Text="壁纸库"
-									FontSize="15"
-									FontWeight="600"
-									Foreground="#FFFFFF"
-									VerticalAlignment="Center"
-								/>
-							</Grid>
-						</Grid>
-
-						<!-- Button Row: 壁纸库位置 -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="壁纸库位置" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Button
-									Grid.Column="1"
-									Background="#323232"
-									BorderThickness="0"
-									CornerRadius="8"
-									Padding="12,6"
-									FontSize="13"
-									Foreground="#FFFFFF"
-									Cursor="Hand"
-									Command="{Binding SelectWallpaperPathCommand}"
-								>
-									<Button.Styles>
-										<Style Selector="Button:hover">
-											<Setter Property="Background" Value="#3A3A3A" />
-										</Style>
-									</Button.Styles>
-									<TextBlock Text="选择" />
-								</Button>
-							</Grid>
-						</Border>
-
-						<!-- Info Card -->
-						<Border Background="#323232" CornerRadius="8" Padding="12" Margin="0,4,0,0">
-							<StackPanel Orientation="Vertical" Spacing="4">
-								<Grid ColumnDefinitions="Auto,Auto">
-									<Path
-										Data="M4,4 L8,4 L10,6 L16,6 C17.1,6 18,6.9 18,8 L18,18 C18,19.1 17.1,20 16,20 L4,20 C2.9,20 2,19.1 2,18 L2,6 C2,4.9 2.9,4 4,4 Z"
-										Stroke="#A0A0A0"
-										StrokeThickness="1"
-										Fill="Transparent"
-										Width="14"
-										Height="14"
-										VerticalAlignment="Center"
-									/>
 									<TextBlock
 										Grid.Column="1"
-										Margin="8,0,0,0"
-										Text="{Binding WallpaperPath}"
+										Margin="12,0,0,0"
+										Text="随机壁纸"
+										FontSize="15"
+										FontWeight="600"
+										Foreground="#FFFFFF"
+										VerticalAlignment="Center"
+									/>
+								</Grid>
+							</Grid>
+
+							<!-- Toggle: 开启自动换壁纸 -->
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="开启自动换壁纸" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Button
+										Grid.Column="1"
+										Width="44"
+										Height="24"
+										Background="Transparent"
+										BorderThickness="0"
+										Padding="0"
+										Cursor="Hand"
+										x:Name="AutoChangeToggle"
+										Command="{Binding ToggleAutoChangeWallpaperCommand}"
+									>
+										<Border Width="44" Height="24" CornerRadius="12" Background="#323232">
+											<Border
+												Width="20"
+												Height="20"
+												CornerRadius="10"
+												Background="#FFFFFF"
+												HorizontalAlignment="Left"
+												Margin="2,0,0,0"
+												VerticalAlignment="Center"
+											/>
+										</Border>
+										<Button.Styles>
+											<Style Selector="Button /template/ ContentPresenter">
+												<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+												<Setter Property="VerticalContentAlignment" Value="Stretch" />
+											</Style>
+										</Button.Styles>
+									</Button>
+								</Grid>
+							</Border>
+
+							<!-- Dropdown: 间隔 -->
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="间隔" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Border
+										Grid.Column="1"
+										Background="#323232"
+										CornerRadius="8"
+										Height="32"
+										Padding="10,0"
+										Cursor="Hand"
+										MinWidth="120"
+										VerticalAlignment="Center"
+									>
+										<Grid ColumnDefinitions="*,Auto">
+											<TextBlock Text="{Binding SelectedInterval}" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+											<lucide:LucideIcon
+												Grid.Column="1"
+												Margin="6,0,0,0"
+												Kind="ChevronDown"
+												Size="14"
+												Foreground="#A0A0A0"
+												VerticalAlignment="Center"
+											/>
+										</Grid>
+									</Border>
+								</Grid>
+							</Border>
+
+							<!-- Segmented Control: 来源 -->
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="来源" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Border Grid.Column="1" Background="#323232" CornerRadius="8" Height="32" Width="140" VerticalAlignment="Center">
+										<Grid ColumnDefinitions="*,*">
+											<Border
+												x:Name="OnlineSourceBtn"
+												Grid.Column="0"
+												Background="#4A90D9"
+												CornerRadius="6"
+												Margin="2"
+												Cursor="Hand"
+												PointerPressed="OnOnlineSourceClicked"
+											>
+												<TextBlock Text="在线" FontSize="13" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+											</Border>
+											<Border
+												x:Name="LocalSourceBtn"
+												Grid.Column="1"
+												Background="Transparent"
+												CornerRadius="6"
+												Margin="2"
+												Cursor="Hand"
+												PointerPressed="OnLocalSourceClicked"
+											>
+												<TextBlock
+													Text="壁纸库"
+													FontSize="13"
+													Foreground="#A0A0A0"
+													HorizontalAlignment="Center"
+													VerticalAlignment="Center"
+												/>
+											</Border>
+										</Grid>
+									</Border>
+								</Grid>
+							</Border>
+
+							<!-- Thumbnail Row: 最近 (靠右对齐) -->
+							<Grid Margin="0,8,0,0">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock VerticalAlignment="Top" Text="最近" FontSize="13" Foreground="#A0A0A0" />
+									<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+										<Border Width="80" Height="60" CornerRadius="8" Background="#323232">
+											<TextBlock Text="暂无" FontSize="12" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
+										</Border>
+										<Border Width="80" Height="60" CornerRadius="8" Background="#323232">
+											<TextBlock Text="暂无" FontSize="12" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
+										</Border>
+									</StackPanel>
+								</Grid>
+							</Grid>
+
+							<!-- Toggle: 主屏幕与外接屏幕相同壁纸 -->
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="主屏幕与外接屏幕相同壁纸" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Button
+										Grid.Column="1"
+										Width="44"
+										Height="24"
+										Background="Transparent"
+										BorderThickness="0"
+										Padding="0"
+										Cursor="Hand"
+										x:Name="MirrorDisplayToggle"
+										Command="{Binding ToggleMirrorDisplaysCommand}"
+									>
+										<Border Width="44" Height="24" CornerRadius="12" Background="#323232">
+											<Border
+												Width="20"
+												Height="20"
+												CornerRadius="10"
+												Background="#FFFFFF"
+												HorizontalAlignment="Left"
+												Margin="2,0,0,0"
+												VerticalAlignment="Center"
+											/>
+										</Border>
+									</Button>
+								</Grid>
+							</Border>
+						</StackPanel>
+					</Border>
+
+					<!-- ===== Section 2: 壁纸库 ===== -->
+					<Border Background="#2A2A2A" CornerRadius="12" Padding="16">
+						<StackPanel Orientation="Vertical" Spacing="0">
+							<Grid Margin="0,0,0,12">
+								<Grid ColumnDefinitions="32,Auto">
+									<Border
+										Width="32"
+										Height="32"
+										CornerRadius="8"
+										Background="#323232"
+										HorizontalAlignment="Center"
+										VerticalAlignment="Center"
+									>
+										<lucide:LucideIcon
+											Kind="HardDrive"
+											Size="18"
+											Foreground="#A0A0A0"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+										/>
+									</Border>
+									<TextBlock
+										Grid.Column="1"
+										Margin="12,0,0,0"
+										Text="壁纸库"
+										FontSize="15"
+										FontWeight="600"
+										Foreground="#FFFFFF"
+										VerticalAlignment="Center"
+									/>
+								</Grid>
+							</Grid>
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="壁纸库位置" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Button
+										Grid.Column="1"
+										Background="#323232"
+										BorderThickness="0"
+										CornerRadius="8"
+										Padding="12,6"
 										FontSize="13"
 										Foreground="#FFFFFF"
-										TextTrimming="CharacterEllipsis"
-									/>
+										Cursor="Hand"
+										Command="{Binding SelectWallpaperPathCommand}"
+									>
+										<Button.Styles>
+											<Style Selector="Button:hover">
+												<Setter Property="Background" Value="#3A3A3A" />
+											</Style>
+										</Button.Styles>
+										<TextBlock Text="选择" />
+									</Button>
 								</Grid>
-								<Grid ColumnDefinitions="Auto,Auto">
-									<TextBlock Text="壁纸库占用" FontSize="12" Foreground="#A0A0A0" />
-									<TextBlock Grid.Column="1" Margin="8,0,0,0" Text="{Binding StorageSize}" FontSize="12" Foreground="#FFFFFF" />
-								</Grid>
-							</StackPanel>
-						</Border>
-
-						<!-- Toggle: 自动导入 -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="自动导入目录内图片" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Button
-									Grid.Column="1"
-									Width="44"
-									Height="24"
-									Background="Transparent"
-									BorderThickness="0"
-									Padding="0"
-									Cursor="Hand"
-									x:Name="AutoImportToggle"
-									Command="{Binding ToggleAutoImportCommand}"
-								>
-									<Border Width="44" Height="24" CornerRadius="12" Background="#4A90D9">
-										<Border
-											Width="20"
-											Height="20"
-											CornerRadius="10"
-											Background="#FFFFFF"
-											HorizontalAlignment="Right"
-											Margin="0,0,2,0"
-											VerticalAlignment="Center"
-										/>
-									</Border>
-								</Button>
-							</Grid>
-						</Border>
-					</StackPanel>
-				</Border>
-
-				<!-- ===== Section 3: 个性化选项 ===== -->
-				<Border Background="#2A2A2A" CornerRadius="12" Padding="16">
-					<StackPanel Orientation="Vertical" Spacing="0">
-						<!-- Section Header -->
-						<Grid Margin="0,0,0,12">
-							<Grid ColumnDefinitions="32,Auto">
-								<Border
-									Width="32"
-									Height="32"
-									CornerRadius="8"
-									Background="#323232"
-									HorizontalAlignment="Center"
-									VerticalAlignment="Center"
-								>
-									<Path
-										Data="M12,2 L12,22 M4,6 L20,6 M4,12 L20,12 M4,18 L20,18"
-										Stroke="#A0A0A0"
-										StrokeThickness="1.5"
-										Fill="Transparent"
-										StrokeLineCap="Round"
-										Width="20"
-										Height="20"
-										HorizontalAlignment="Center"
-										VerticalAlignment="Center"
-									/>
-								</Border>
-								<TextBlock
-									Grid.Column="1"
-									Margin="12,0,0,0"
-									Text="个性化选项"
-									FontSize="15"
-									FontWeight="600"
-									Foreground="#FFFFFF"
-									VerticalAlignment="Center"
-								/>
-							</Grid>
-						</Grid>
-
-						<!-- Toggle: 所有桌面空间使用相同壁纸 -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="所有桌面空间使用相同壁纸" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Button
-									Grid.Column="1"
-									Width="44"
-									Height="24"
-									Background="Transparent"
-									BorderThickness="0"
-									Padding="0"
-									Cursor="Hand"
-									x:Name="SameWallpaperToggle"
-									Command="{Binding ToggleSameWallpaperCommand}"
-								>
-									<Border Width="44" Height="24" CornerRadius="12" Background="#323232">
-										<Border
-											Width="20"
-											Height="20"
-											CornerRadius="10"
-											Background="#FFFFFF"
-											HorizontalAlignment="Left"
-											Margin="2,0,0,0"
-											VerticalAlignment="Center"
-										/>
-									</Border>
-								</Button>
-							</Grid>
-						</Border>
-
-						<!-- Toggle: 将菜单栏调暗 -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="将菜单栏调暗" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Button
-									Grid.Column="1"
-									Width="44"
-									Height="24"
-									Background="Transparent"
-									BorderThickness="0"
-									Padding="0"
-									Cursor="Hand"
-									x:Name="DimMenuBarToggle"
-									Command="{Binding ToggleDimMenuBarCommand}"
-								>
-									<Border Width="44" Height="24" CornerRadius="12" Background="#323232">
-										<Border
-											Width="20"
-											Height="20"
-											CornerRadius="10"
-											Background="#FFFFFF"
-											HorizontalAlignment="Left"
-											Margin="2,0,0,0"
-											VerticalAlignment="Center"
-										/>
-									</Border>
-								</Button>
-							</Grid>
-						</Border>
-					</StackPanel>
-				</Border>
-
-				<!-- ===== Section 4: 通用 ===== -->
-				<Border Background="#2A2A2A" CornerRadius="12" Padding="16">
-					<StackPanel Orientation="Vertical" Spacing="0">
-						<!-- Section Header -->
-						<Grid Margin="0,0,0,12">
-							<Grid ColumnDefinitions="32,Auto">
-								<Border
-									Width="32"
-									Height="32"
-									CornerRadius="8"
-									Background="#323232"
-									HorizontalAlignment="Center"
-									VerticalAlignment="Center"
-								>
-									<Path
-										Data="M12,12 C14.2,12 16,10.2 16,8 C16,5.8 14.2,4 12,4 C9.8,4 8,5.8 8,8 C8,10.2 9.8,12 12,12 Z M6,20 L18,20 C18,16.7 15.3,14 12,14 C8.7,14 6,16.7 6,20 Z"
-										Stroke="#A0A0A0"
-										StrokeThickness="1.5"
-										Fill="Transparent"
-										Width="20"
-										Height="20"
-										HorizontalAlignment="Center"
-										VerticalAlignment="Center"
-									/>
-								</Border>
-								<TextBlock
-									Grid.Column="1"
-									Margin="12,0,0,0"
-									Text="通用"
-									FontSize="15"
-									FontWeight="600"
-									Foreground="#FFFFFF"
-									VerticalAlignment="Center"
-								/>
-							</Grid>
-						</Grid>
-
-						<!-- Dropdown: 语言 -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="语言" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Border Grid.Column="1" Background="#323232" CornerRadius="8" Padding="8,6" Cursor="Hand" MinWidth="100">
+							</Border>
+							<Border Background="#323232" CornerRadius="8" Padding="12" Margin="0,4,0,0">
+								<StackPanel Orientation="Vertical" Spacing="4">
 									<Grid ColumnDefinitions="Auto,Auto">
-										<TextBlock Text="{Binding SelectedLanguage}" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
 										<lucide:LucideIcon
-											Grid.Column="1"
-											Margin="4,0,0,0"
-											Kind="ChevronDown"
-											Size="12"
+											Kind="HardDrive"
+											Size="14"
 											Foreground="#A0A0A0"
+											HorizontalAlignment="Center"
 											VerticalAlignment="Center"
+										/>
+										<TextBlock
+											Grid.Column="1"
+											Margin="8,0,0,0"
+											Text="{Binding WallpaperPath}"
+											FontSize="13"
+											Foreground="#FFFFFF"
+											TextTrimming="CharacterEllipsis"
 										/>
 									</Grid>
-								</Border>
-							</Grid>
-						</Border>
+									<Grid ColumnDefinitions="Auto,Auto">
+										<TextBlock Text="壁纸库占用" FontSize="12" Foreground="#A0A0A0" />
+										<TextBlock Grid.Column="1" Margin="8,0,0,0" Text="{Binding StorageSize}" FontSize="12" Foreground="#FFFFFF" />
+									</Grid>
+								</StackPanel>
+							</Border>
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="自动导入目录内图片" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Button
+										Grid.Column="1"
+										Width="44"
+										Height="24"
+										Background="Transparent"
+										BorderThickness="0"
+										Padding="0"
+										Cursor="Hand"
+										x:Name="AutoImportToggle"
+										Command="{Binding ToggleAutoImportCommand}"
+									>
+										<Border Width="44" Height="24" CornerRadius="12" Background="#4A90D9">
+											<Border
+												Width="20"
+												Height="20"
+												CornerRadius="10"
+												Background="#FFFFFF"
+												HorizontalAlignment="Right"
+												Margin="0,0,2,0"
+												VerticalAlignment="Center"
+											/>
+										</Border>
+									</Button>
+								</Grid>
+							</Border>
+						</StackPanel>
+					</Border>
 
-						<!-- Toggle: 随系统启动 -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="随系统启动" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Button
-									Grid.Column="1"
-									Width="44"
-									Height="24"
-									Background="Transparent"
-									BorderThickness="0"
-									Padding="0"
-									Cursor="Hand"
-									x:Name="LaunchAtLoginToggle"
-									Command="{Binding ToggleLaunchAtLoginCommand}"
-								>
-									<Border Width="44" Height="24" CornerRadius="12" Background="#4A90D9">
-										<Border
-											Width="20"
-											Height="20"
-											CornerRadius="10"
-											Background="#FFFFFF"
-											HorizontalAlignment="Right"
-											Margin="0,0,2,0"
+					<!-- ===== Section 3: 个性化选项 ===== -->
+					<Border Background="#2A2A2A" CornerRadius="12" Padding="16">
+						<StackPanel Orientation="Vertical" Spacing="0">
+							<Grid Margin="0,0,0,12">
+								<Grid ColumnDefinitions="32,Auto">
+									<Border
+										Width="32"
+										Height="32"
+										CornerRadius="8"
+										Background="#323232"
+										HorizontalAlignment="Center"
+										VerticalAlignment="Center"
+									>
+										<lucide:LucideIcon
+											Kind="TvMinimal"
+											Size="18"
+											Foreground="#A0A0A0"
+											HorizontalAlignment="Center"
 											VerticalAlignment="Center"
 										/>
 									</Border>
-								</Button>
+									<TextBlock
+										Grid.Column="1"
+										Margin="12,0,0,0"
+										Text="个性化选项"
+										FontSize="15"
+										FontWeight="600"
+										Foreground="#FFFFFF"
+										VerticalAlignment="Center"
+									/>
+								</Grid>
 							</Grid>
-						</Border>
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="所有桌面空间使用相同壁纸" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Button
+										Grid.Column="1"
+										Width="44"
+										Height="24"
+										Background="Transparent"
+										BorderThickness="0"
+										Padding="0"
+										Cursor="Hand"
+										x:Name="SameWallpaperToggle"
+										Command="{Binding ToggleSameWallpaperCommand}"
+									>
+										<Border Width="44" Height="24" CornerRadius="12" Background="#323232">
+											<Border
+												Width="20"
+												Height="20"
+												CornerRadius="10"
+												Background="#FFFFFF"
+												HorizontalAlignment="Left"
+												Margin="2,0,0,0"
+												VerticalAlignment="Center"
+											/>
+										</Border>
+									</Button>
+								</Grid>
+							</Border>
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="将菜单栏调暗" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Button
+										Grid.Column="1"
+										Width="44"
+										Height="24"
+										Background="Transparent"
+										BorderThickness="0"
+										Padding="0"
+										Cursor="Hand"
+										x:Name="DimMenuBarToggle"
+										Command="{Binding ToggleDimMenuBarCommand}"
+									>
+										<Border Width="44" Height="24" CornerRadius="12" Background="#323232">
+											<Border
+												Width="20"
+												Height="20"
+												CornerRadius="10"
+												Background="#FFFFFF"
+												HorizontalAlignment="Left"
+												Margin="2,0,0,0"
+												VerticalAlignment="Center"
+											/>
+										</Border>
+									</Button>
+								</Grid>
+							</Border>
+						</StackPanel>
+					</Border>
 
-						<!-- Toggle: 在程序坞显示图标 -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="在程序坞显示图标" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Button
-									Grid.Column="1"
-									Width="44"
-									Height="24"
-									Background="Transparent"
-									BorderThickness="0"
-									Padding="0"
-									Cursor="Hand"
-									x:Name="ShowInDockToggle"
-									Command="{Binding ToggleShowInDockCommand}"
-								>
-									<Border Width="44" Height="24" CornerRadius="12" Background="#4A90D9">
-										<Border
-											Width="20"
-											Height="20"
-											CornerRadius="10"
-											Background="#FFFFFF"
-											HorizontalAlignment="Right"
-											Margin="0,0,2,0"
+					<!-- ===== Section 4: 通用 ===== -->
+					<Border Background="#2A2A2A" CornerRadius="12" Padding="16">
+						<StackPanel Orientation="Vertical" Spacing="0">
+							<Grid Margin="0,0,0,12">
+								<Grid ColumnDefinitions="32,Auto">
+									<Border
+										Width="32"
+										Height="32"
+										CornerRadius="8"
+										Background="#323232"
+										HorizontalAlignment="Center"
+										VerticalAlignment="Center"
+									>
+										<lucide:LucideIcon
+											Kind="SlidersHorizontal"
+											Size="18"
+											Foreground="#A0A0A0"
+											HorizontalAlignment="Center"
 											VerticalAlignment="Center"
 										/>
 									</Border>
-								</Button>
+									<TextBlock
+										Grid.Column="1"
+										Margin="12,0,0,0"
+										Text="通用"
+										FontSize="15"
+										FontWeight="600"
+										Foreground="#FFFFFF"
+										VerticalAlignment="Center"
+									/>
+								</Grid>
 							</Grid>
-						</Border>
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="语言" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Border
+										Grid.Column="1"
+										Background="#323232"
+										CornerRadius="8"
+										Height="32"
+										Padding="10,0"
+										Cursor="Hand"
+										MinWidth="120"
+										VerticalAlignment="Center"
+									>
+										<Grid ColumnDefinitions="*,Auto">
+											<TextBlock Text="{Binding SelectedLanguage}" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+											<lucide:LucideIcon
+												Grid.Column="1"
+												Margin="6,0,0,0"
+												Kind="ChevronDown"
+												Size="14"
+												Foreground="#A0A0A0"
+												VerticalAlignment="Center"
+											/>
+										</Grid>
+									</Border>
+								</Grid>
+							</Border>
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="随系统启动" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Button
+										Grid.Column="1"
+										Width="44"
+										Height="24"
+										Background="Transparent"
+										BorderThickness="0"
+										Padding="0"
+										Cursor="Hand"
+										x:Name="LaunchAtLoginToggle"
+										Command="{Binding ToggleLaunchAtLoginCommand}"
+									>
+										<Border Width="44" Height="24" CornerRadius="12" Background="#4A90D9">
+											<Border
+												Width="20"
+												Height="20"
+												CornerRadius="10"
+												Background="#FFFFFF"
+												HorizontalAlignment="Right"
+												Margin="0,0,2,0"
+												VerticalAlignment="Center"
+											/>
+										</Border>
+									</Button>
+								</Grid>
+							</Border>
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="在程序坞显示图标" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Button
+										Grid.Column="1"
+										Width="44"
+										Height="24"
+										Background="Transparent"
+										BorderThickness="0"
+										Padding="0"
+										Cursor="Hand"
+										x:Name="ShowInDockToggle"
+										Command="{Binding ToggleShowInDockCommand}"
+									>
+										<Border Width="44" Height="24" CornerRadius="12" Background="#4A90D9">
+											<Border
+												Width="20"
+												Height="20"
+												CornerRadius="10"
+												Background="#FFFFFF"
+												HorizontalAlignment="Right"
+												Margin="0,0,2,0"
+												VerticalAlignment="Center"
+											/>
+										</Border>
+									</Button>
+								</Grid>
+							</Border>
+							<Border Height="44">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock Text="{Binding Version}" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+									<Button
+										Grid.Column="1"
+										Background="Transparent"
+										BorderThickness="0"
+										CornerRadius="8"
+										Padding="8,6"
+										Cursor="Hand"
+										Command="{Binding CheckUpdateCommand}"
+									>
+										<Button.Styles>
+											<Style Selector="Button:hover">
+												<Setter Property="Foreground" Value="#5A9EE8" />
+											</Style>
+										</Button.Styles>
+										<TextBlock Text="新版变化" FontSize="12" Foreground="#4A90D9" />
+									</Button>
+								</Grid>
+							</Border>
+						</StackPanel>
+					</Border>
 
-						<!-- Version Row -->
-						<Border Height="44">
-							<Grid ColumnDefinitions="*,Auto">
-								<TextBlock Text="{Binding Version}" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-								<Button
-									Grid.Column="1"
-									Background="Transparent"
-									BorderThickness="0"
-									CornerRadius="8"
-									Padding="8,6"
-									Cursor="Hand"
-									Command="{Binding CheckUpdateCommand}"
-								>
-									<Button.Styles>
-										<Style Selector="Button:hover">
-											<Setter Property="Foreground" Value="#5A9EE8" />
-										</Style>
-									</Button.Styles>
-									<TextBlock Text="新版变化" FontSize="12" Foreground="#4A90D9" />
-								</Button>
-							</Grid>
-						</Border>
+					<!-- ============ Footer ============ -->
+					<StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="0,20,0,16">
+						<StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+							<Button Background="Transparent" BorderThickness="0" FontSize="13" Foreground="#A0A0A0" Cursor="Hand" Margin="0,0,16,0">
+								<Button.Styles>
+									<Style Selector="Button:hover">
+										<Setter Property="Foreground" Value="#FFFFFF" />
+									</Style>
+								</Button.Styles>
+								<TextBlock Text="关于我们" />
+							</Button>
+							<TextBlock Text="·" FontSize="13" Foreground="#6E6E6E" VerticalAlignment="Center" />
+							<Button
+								Background="Transparent"
+								BorderThickness="0"
+								FontSize="13"
+								Foreground="#A0A0A0"
+								Cursor="Hand"
+								Margin="16,0,0,0"
+								Command="{Binding QuitAppCommand}"
+							>
+								<Button.Styles>
+									<Style Selector="Button:hover">
+										<Setter Property="Foreground" Value="#FFFFFF" />
+									</Style>
+								</Button.Styles>
+								<TextBlock Text="退出 pap.er" />
+							</Button>
+						</StackPanel>
+						<TextBlock Text="pap.er 优雅壁纸" FontSize="12" Foreground="#6E6E6E" HorizontalAlignment="Center" Margin="0,8,0,0" />
 					</StackPanel>
-				</Border>
-
-				<!-- ============ Footer ============ -->
-				<StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="0,20,0,16">
-					<StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-						<Button Background="Transparent" BorderThickness="0" FontSize="13" Foreground="#A0A0A0" Cursor="Hand" Margin="0,0,16,0">
-							<Button.Styles>
-								<Style Selector="Button:hover">
-									<Setter Property="Foreground" Value="#FFFFFF" />
-								</Style>
-							</Button.Styles>
-							<TextBlock Text="关于我们" />
-						</Button>
-						<TextBlock Text="·" FontSize="13" Foreground="#6E6E6E" VerticalAlignment="Center" />
-						<Button
-							Background="Transparent"
-							BorderThickness="0"
-							FontSize="13"
-							Foreground="#A0A0A0"
-							Cursor="Hand"
-							Margin="16,0,0,0"
-							Command="{Binding QuitAppCommand}"
-						>
-							<Button.Styles>
-								<Style Selector="Button:hover">
-									<Setter Property="Foreground" Value="#FFFFFF" />
-								</Style>
-							</Button.Styles>
-							<TextBlock Text="退出 pap.er" />
-						</Button>
-					</StackPanel>
-					<TextBlock Text="pap.er 优雅壁纸" FontSize="12" Foreground="#6E6E6E" HorizontalAlignment="Center" Margin="0,8,0,0" />
 				</StackPanel>
 			</StackPanel>
 		</ScrollViewer>

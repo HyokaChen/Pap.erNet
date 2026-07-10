@@ -44,102 +44,122 @@
 		</ExperimentalAcrylicBorder>
 
 		<Panel x:Name="PageContainer">
-			<!-- Home -->
-			<Grid x:Name="HomePage" RowDefinitions="Auto,Auto,*">
-				<!-- Header -->
-				<Border Height="56" Padding="24,16,16,0" Background="#1E1E1E">
-					<Grid ColumnDefinitions="*,Auto,Auto">
-						<TextBlock
-							Text="pap.er"
-							FontSize="38"
-							FontWeight="Bold"
-							LetterSpacing="6"
-							VerticalAlignment="Center"
-							Foreground="#C9A96E"
-							Opacity="0.85"
-						/>
-						<Button
-							Grid.Column="1"
-							Width="32"
-							Height="32"
-							Background="Transparent"
-							BorderThickness="0"
-							CornerRadius="8"
-							Margin="0,0,4,0"
-							Cursor="Hand"
-							ToolTip.Tip="我的壁纸"
-							Click="OnMyWallpapersClick"
-						>
-							<lucide:LucideIcon Kind="Sun" Size="20" Foreground="#A0A0A0" />
-							<Button.Styles>
-								<Style Selector="Button:hover /template/ ContentPresenter">
-									<Setter Property="Background" Value="#3A3A3A" />
-								</Style>
-							</Button.Styles>
-						</Button>
-						<Button
-							Grid.Column="2"
-							Width="32"
-							Height="32"
-							Background="Transparent"
-							BorderThickness="0"
-							CornerRadius="8"
-							Cursor="Hand"
-							ToolTip.Tip="设置"
-							Click="OnSettingsClick"
-						>
-							<lucide:LucideIcon Kind="Settings" Size="20" Foreground="#A0A0A0" />
-							<Button.Styles>
-								<Style Selector="Button:hover /template/ ContentPresenter">
-									<Setter Property="Background" Value="#3A3A3A" />
-								</Style>
-							</Button.Styles>
-						</Button>
-					</Grid>
-				</Border>
-
-				<!-- Tab Bar -->
-				<Border Grid.Row="1" Height="40" Background="#1E1E1E">
-					<ItemsControl x:Name="TabItemsControl" ItemsSource="{Binding WallpaperListViewModels}" HorizontalAlignment="Center">
-						<ItemsControl.ItemsPanel>
-							<ItemsPanelTemplate>
-								<StackPanel Orientation="Horizontal" Spacing="32" />
-							</ItemsPanelTemplate>
-						</ItemsControl.ItemsPanel>
-						<ItemsControl.ItemTemplate>
-							<DataTemplate x:DataType="vm:HeaderWithWallpaperListViewModel">
-								<Border Height="40" Background="Transparent" Cursor="Hand" PointerPressed="OnTabPressed">
-									<StackPanel Orientation="Vertical" VerticalAlignment="Bottom">
-										<TextBlock
-											Text="{Binding Header}"
-											FontSize="14"
-											FontWeight="500"
-											HorizontalAlignment="Center"
-											Padding="0,0,0,8"
-											Foreground="{Binding IsSelected, Converter={StaticResource BoolToTabBrushConverter}}"
-										/>
-										<Border
-											Height="2"
-											CornerRadius="1"
-											Width="24"
-											HorizontalAlignment="Center"
-											Background="{Binding IsSelected, Converter={StaticResource BoolToUnderlineBrushConverter}}"
-										/>
-									</StackPanel>
-								</Border>
-							</DataTemplate>
-						</ItemsControl.ItemTemplate>
-					</ItemsControl>
-				</Border>
-
-				<!-- Content -->
-				<Carousel Grid.Row="2" SelectedIndex="{Binding SelectedTabIndex}" ItemsSource="{Binding WallpaperListViewModels}" Padding="0">
+			<Grid x:Name="HomePage">
+				<!-- 底层：Carousel 填满整个区域，壁纸内容可以滚动到 header 后方 -->
+				<Carousel
+					x:Name="HomeCarousel"
+					SelectedIndex="{Binding SelectedTabIndex}"
+					ItemsSource="{Binding WallpaperListViewModels}"
+					Padding="0"
+				>
 					<Carousel.DataTemplates>
 						<DataTemplate x:DataType="vm:HeaderWithWallpaperListViewModel">
 							<home:WallpaperListView DataContext="{Binding WallpaperListViewModel}" />
 						</DataTemplate>
 					</Carousel.DataTemplates>
 				</Carousel>
+
+				<!-- 顶层：Header（带镂空 Clip）+ Tab Bar -->
+				<StackPanel>
+					<!-- Header 遮罩：#1E1E1E 背景上挖出 logo 文字的洞，壁纸从洞中穿透显示 -->
+					<Border x:Name="HeaderMask" Height="56" Padding="24,0,16,0" Background="#1E1E1E">
+						<Grid ColumnDefinitions="*,Auto,Auto" VerticalAlignment="Center">
+							<!-- Logo 占位（仅用于布局，实际显示由 Clip 镂空实现） -->
+							<TextBlock
+								x:Name="LogoText"
+								Text="pap.er"
+								FontSize="52"
+								FontWeight="Bold"
+								LetterSpacing="6"
+								VerticalAlignment="Center"
+								Foreground="Transparent"
+							/>
+
+							<Button
+								Grid.Column="1"
+								Width="32"
+								Height="32"
+								Padding="0"
+								Background="Transparent"
+								BorderThickness="0"
+								CornerRadius="8"
+								Margin="0,0,4,0"
+								Cursor="Hand"
+								ToolTip.Tip="我的壁纸"
+								Click="OnMyWallpapersClick"
+								Foreground="#A0A0A0"
+							>
+								<lucide:LucideIcon Kind="Sun" Size="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+								<Button.Styles>
+									<Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+										<Setter Property="Background" Value="Transparent" />
+									</Style>
+									<Style Selector="Button:pointerover">
+										<Setter Property="Foreground" Value="#FFFFFF" />
+									</Style>
+								</Button.Styles>
+							</Button>
+
+							<Button
+								Grid.Column="2"
+								Width="32"
+								Height="32"
+								Padding="0"
+								Background="Transparent"
+								BorderThickness="0"
+								CornerRadius="8"
+								Cursor="Hand"
+								ToolTip.Tip="设置"
+								Click="OnSettingsClick"
+								Foreground="#A0A0A0"
+							>
+								<lucide:LucideIcon Kind="Settings" Size="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+								<Button.Styles>
+									<Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+										<Setter Property="Background" Value="Transparent" />
+									</Style>
+									<Style Selector="Button:pointerover">
+										<Setter Property="Foreground" Value="#FFFFFF" />
+									</Style>
+								</Button.Styles>
+							</Button>
+						</Grid>
+					</Border>
+
+					<!-- Tab Bar -->
+					<Border Height="40" Background="#1E1E1E">
+						<ItemsControl x:Name="TabItemsControl" ItemsSource="{Binding WallpaperListViewModels}" HorizontalAlignment="Center">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<StackPanel Orientation="Horizontal" Spacing="56" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate x:DataType="vm:HeaderWithWallpaperListViewModel">
+									<Border Height="40" Background="Transparent" Cursor="Hand" PointerPressed="OnTabPressed">
+										<StackPanel Orientation="Vertical" VerticalAlignment="Bottom">
+											<TextBlock
+												Text="{Binding Header}"
+												FontSize="14"
+												FontWeight="500"
+												HorizontalAlignment="Center"
+												Padding="0,0,0,8"
+												Foreground="{Binding IsSelected, Converter={StaticResource BoolToTabBrushConverter}}"
+											/>
+											<Border
+												Height="2"
+												CornerRadius="1"
+												Width="24"
+												HorizontalAlignment="Center"
+												Background="{Binding IsSelected, Converter={StaticResource BoolToUnderlineBrushConverter}}"
+											/>
+										</StackPanel>
+									</Border>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</Border>
+				</StackPanel>
 			</Grid>
 
 			<me:MeView
@@ -178,14 +198,14 @@
 			Opacity="0.9"
 		>
 			<Button.Styles>
-				<Style Selector="Button:hover /template/ ContentPresenter">
+				<Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
 					<Setter Property="Background" Value="#3A3A3A" />
 				</Style>
-				<Style Selector="Button:pressed  /template/ ContentPresenter">
+				<Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
 					<Setter Property="Background" Value="#4A4A4A" />
 				</Style>
 			</Button.Styles>
-			<lucide:LucideIcon Kind="RotateCw" Size="16" Foreground="#FFFFFF" />
+			<lucide:LucideIcon Kind="RotateCw" Size="16" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
 		</Button>
 	</Panel>
 </Window>

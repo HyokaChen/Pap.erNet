@@ -12,7 +12,7 @@
 	xmlns:item="using:Pap.erNet.Pages.Home"
 	Background="Transparent"
 >
-	<ItemsControl x:Name="WallpaperListIC" Height="600" ItemsSource="{Binding WallpaperListItems}">
+	<ItemsControl x:Name="WallpaperListIC" ItemsSource="{Binding WallpaperListItems}">
 		<ItemsControl.ItemsPanel>
 			<ItemsPanelTemplate>
 				<VirtualizingStackPanel Orientation="Vertical" />
@@ -21,7 +21,6 @@
 		<ItemsControl.Template>
 			<ControlTemplate TargetType="ItemsControl">
 				<ScrollViewer
-					Padding="{TemplateBinding Padding}"
 					HorizontalScrollBarVisibility="Hidden"
 					IsScrollInertiaEnabled="False"
 					IsScrollChainingEnabled="False"
@@ -29,7 +28,12 @@
 					ScrollChanged="ScrollViewer_ScrollChanged"
 					VerticalScrollBarVisibility="Hidden"
 				>
-					<ItemsPresenter />
+					<StackPanel>
+						<!-- 顶部占位：高度等于 header+tab(96px)，初始时将壁纸推到 header 下方 -->
+						<!-- 滚动时此占位滚出视口，壁纸内容滚入 header 区域，透过镂空 Clip 显示 -->
+						<Border x:Name="TopSpacer" Height="96" Background="Transparent" />
+						<ItemsPresenter />
+					</StackPanel>
 				</ScrollViewer>
 			</ControlTemplate>
 		</ItemsControl.Template>
