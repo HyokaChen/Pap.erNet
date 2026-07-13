@@ -276,3 +276,7 @@ Use codegraph for **structural** questions — what calls what, what would break
 
 The MCP server returns "not initialized." Ask the user: *"I notice this project doesn't have CodeGraph initialized. Want me to run `codegraph init -i` to build the index?"*
 <!-- CODEGRAPH_END -->
+
+This project uses r3 for review. Run it with whichever of these you have:
+`npx @hyperlogue/r3@latest`, `bunx @hyperlogue/r3@latest`, or `nix run github:hyperlogue/r3 --`.
+`r3 guide` will show how to use it.
