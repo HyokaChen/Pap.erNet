@@ -13,7 +13,7 @@ namespace Pap.erNet.Pages.Home;
 
 public partial class WallpaperView : UserControl
 {
-	[LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]
+	[LibraryImport("user32.dll", EntryPoint = "SystemParametersInfoW", StringMarshalling = StringMarshalling.Utf16)]
 	private static partial int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
 
 	private const int SPI_SETDESKWALLPAPER = 20;
