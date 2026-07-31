@@ -45,7 +45,7 @@ public class WallpaperListViewModel : ViewModelBase
 				LogHelper.WriteLogAsync($"LoadWallpapersAsync: 开始加载, ListId={ListId}");
 				WallpaperListItems.Clear();
 				await DisposeGeneratorAsync();
-				_wallpapersGenerator = _service.GetWallpapersAsync(ListId).ConfigureAwait(false).GetAsyncEnumerator();
+				_wallpapersGenerator = WallpaperListService.GetWallpapersAsync(ListId).ConfigureAwait(false).GetAsyncEnumerator();
 				await InternalNext();
 			}
 			finally

@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Net.Security;
 using System.Text;
 using System.Text.Json;
 using Pap.erNet.Models;
@@ -21,7 +22,7 @@ public class AuthService
 		{
 			UseProxy = false,
 			AllowAutoRedirect = true,
-			SslOptions = new() { RemoteCertificateValidationCallback = (_, _, _, _) => true },
+			SslOptions = new SslClientAuthenticationOptions { RemoteCertificateValidationCallback = (_, _, _, _) => true },
 		}
 	)
 	{

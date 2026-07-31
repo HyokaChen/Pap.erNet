@@ -12,7 +12,7 @@ public class WallpaperListService
 	/// <summary>
 	/// 根据 listId 获取壁纸列表（通用方法，替代原来的三个独立方法）
 	/// </summary>
-	public async IAsyncEnumerable<Wallpaper> GetWallpapersAsync(string listId)
+	public static async IAsyncEnumerable<Wallpaper> GetWallpapersAsync(string listId)
 	{
 		// 预解析 CDN 域名（首次调用时会请求 status 接口）
 		await CdnResolver.GetResolvedCdnHostAsync().ConfigureAwait(false);

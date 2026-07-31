@@ -111,8 +111,7 @@ public partial class App : Application
 					SslOptions = new System.Net.Security.SslClientAuthenticationOptions
 					{
 						RemoteCertificateValidationCallback = (_, _, _, _) => true,
-						EnabledSslProtocols =
-							System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13,
+						EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
 					},
 					AutomaticDecompression =
 						System.Net.DecompressionMethods.GZip

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Security;
 using System.Runtime.InteropServices;
+using System.Security.Authentication;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
@@ -12,8 +13,8 @@ namespace Pap.erNet.Pages.Home;
 
 public partial class WallpaperView : UserControl
 {
-	[DllImport("user32.dll", CharSet = CharSet.Auto)]
-	private static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+	[LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]
+	private static partial int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
 
 	private const int SPI_SETDESKWALLPAPER = 20;
 	private const int SPIF_UPDATEINIFILE = 0x1;
@@ -60,21 +61,28 @@ public partial class WallpaperView : UserControl
 				var fullUrl = vm.ImageSource.Replace("/thumb", "/full");
 				await DownloadAsync(fullUrl, filePath);
 			}
-			DownloadPB.IsVisible = false;
 
 			// 跨平台设置桌面壁纸
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 			{
-				SetWindowsWallpaper(filePath);
+				await SetWindowsWallpaperAsync(filePath);
 			}
 			else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 			{
 				await SetLinuxWallpaper(filePath);
 			}
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			{
+				await SetMacWallpaperAsync(filePath);
+			}
+
+			// 进度条至少显示 600ms，避免下载太快闪一下就消失
+			await Task.Delay(600);
+			DownloadPB.IsVisible = false;
 		}
 		catch (Exception ex)
 		{
-			throw; // TODO 处理异常
+			LogHelper.WriteLogAsync($"设置桌面壁纸失败:{ex.GetType().Name}:{ex.Message}");
 		}
 	}
 
@@ -82,7 +90,7 @@ public partial class WallpaperView : UserControl
 	{
 		try
 		{
-			var client = new HttpClient(
+			using var client = new HttpClient(
 				new SocketsHttpHandler
 				{
 					UseProxy = false,
@@ -90,54 +98,113 @@ public partial class WallpaperView : UserControl
 					AllowAutoRedirect = true,
 					SslOptions = new SslClientAuthenticationOptions
 					{
-						RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true,
-						EnabledSslProtocols =
-							System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13,
+						RemoteCertificateValidationCallback = (_, _, _, _) => true,
+						EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
 					},
 				}
-			)
-			{
-				Timeout = TimeSpan.FromSeconds(300),
-			};
+			);
+			client.Timeout = TimeSpan.FromSeconds(300);
 			client.DefaultRequestHeaders.UserAgent.ParseAdd(DeviceUtil.GetImageDownloadUserAgent());
 			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/avif"));
 			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/webp"));
 			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*") { Quality = 0.9 });
 			client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 			client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
-			client.DefaultRequestHeaders.Host = "c3.wuse.co";
+
 			LogHelper.WriteLogAsync($"Download Url::{fullUrl}");
-			using var response = await client.GetAsync(fullUrl, HttpCompletionOption.ResponseHeadersRead);
-			var contentLen = response.Content.Headers.ContentLength;
-			var totalLen = contentLen ?? -1;
+
+			using var response = await client.GetAsync(fullUrl, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+
+			var totalLen = response.Content.Headers.ContentLength.GetValueOrDefault(-1);
+
+			var dir = Path.GetDirectoryName(filePath);
+			if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+				Directory.CreateDirectory(dir);
+
 			await using var downloadFile = File.Create(filePath);
+			await using var download = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
-			await using var download = await response.Content.ReadAsStreamAsync();
-			var buffer = new byte[10240];
-
-			long totalBytesRead = 0;
-
-			int bytesRead;
-
-			while ((bytesRead = await download.ReadAsync(buffer).ConfigureAwait(false)) != 0)
+			// 把整个下载循环丢到后台线程，UI 线程完全自由
+			await Task.Run(async () =>
 			{
-				await downloadFile.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
-				totalBytesRead += bytesRead;
-				Dispatcher.UIThread.Invoke(() =>
+				var buffer = new byte[8192];
+				long totalBytesRead = 0;
+				int bytesRead;
+
+				while ((bytesRead = await download.ReadAsync(buffer).ConfigureAwait(false)) != 0)
 				{
-					DownloadPB.Value = totalBytesRead * 1.0 / totalLen * 100;
-				});
-			}
+					await downloadFile.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
+					totalBytesRead += bytesRead;
+
+					// 每次读取都更新进度条，流式展示
+					var progress = totalLen > 0 ? totalBytesRead * 100.0 / totalLen : 0;
+					await Dispatcher.UIThread.InvokeAsync(
+						() =>
+						{
+							DownloadPB.Value = progress;
+						},
+						DispatcherPriority.Background
+					);
+				}
+
+				LogHelper.WriteLogAsync($"下载完成: {fullUrl}, 大小={totalBytesRead}");
+			});
 		}
 		catch (Exception ex)
 		{
-			LogHelper.WriteLogAsync($"请求出现报错:{ex.Message}>>>{ex.StackTrace}");
+			LogHelper.WriteLogAsync($"下载失败:{ex.GetType().Name}:{ex.Message}>>>{ex.StackTrace}");
+			try
+			{
+				File.Delete(filePath);
+			}
+			catch
+			{ /* ignore */
+			}
 		}
 	}
 
-	private void SetWindowsWallpaper(string filePath)
+	private static async Task SetWindowsWallpaperAsync(string filePath)
 	{
-		_ = SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, filePath, SPIF_UPDATEINIFILE);
+		await Task.Run(() => SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, filePath, SPIF_UPDATEINIFILE));
+	}
+
+	private static async Task SetMacWallpaperAsync(string filePath)
+	{
+		try
+		{
+			var absolutePath = Path.GetFullPath(filePath);
+			using var process = Process.Start(
+				new ProcessStartInfo
+				{
+					FileName = "/usr/bin/osascript",
+					Arguments =
+						$"-e \"tell application \\\"System Events\\\" to set picture of every desktop to POSIX file \\\"{absolutePath}\\\"\"",
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+					UseShellExecute = false,
+					CreateNoWindow = true,
+				}
+			);
+			if (process is null)
+			{
+				LogHelper.WriteLogAsync("设置Mac壁纸失败: 无法启动 osascript 进程");
+				return;
+			}
+
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+			await process.WaitForExitAsync(cts.Token);
+
+			var error = await process.StandardError.ReadToEndAsync(cts.Token);
+			LogHelper.WriteLogAsync(!string.IsNullOrWhiteSpace(error) ? $"设置Mac壁纸失败: {error}" : $"Mac壁纸设置成功: {absolutePath}");
+		}
+		catch (OperationCanceledException)
+		{
+			LogHelper.WriteLogAsync("设置Mac壁纸超时(5秒)");
+		}
+		catch (Exception ex)
+		{
+			LogHelper.WriteLogAsync($"设置Mac壁纸异常: {ex.Message}");
+		}
 	}
 
 	private async Task SetLinuxWallpaper(string filePath)
@@ -214,7 +281,7 @@ public partial class WallpaperView : UserControl
 		}
 	}
 
-	private string GetLinuxDesktopEnvironment()
+	private static string GetLinuxDesktopEnvironment()
 	{
 		// 尝试从环境变量获取桌面环境
 		var desktopSession = Environment.GetEnvironmentVariable("DESKTOP_SESSION")?.ToLower() ?? "";
@@ -335,7 +402,7 @@ public partial class WallpaperView : UserControl
 		}
 	}
 
-	private async Task<(bool Success, string ErrorMessage)> SetKdeWallpaper(string filePath)
+	private static async Task<(bool Success, string ErrorMessage)> SetKdeWallpaper(string filePath)
 	{
 		try
 		{
@@ -420,7 +487,7 @@ for (i=0;i<allDesktops.length;i++) {{
 		}
 	}
 
-	private async Task<(bool Success, string ErrorMessage)> SetXfceWallpaper(string filePath)
+	private static async Task<(bool Success, string ErrorMessage)> SetXfceWallpaper(string filePath)
 	{
 		try
 		{
@@ -447,7 +514,7 @@ for (i=0;i<allDesktops.length;i++) {{
 		}
 	}
 
-	private async Task<(bool Success, string ErrorMessage)> SetCinnamonWallpaper(string filePath)
+	private static async Task<(bool Success, string ErrorMessage)> SetCinnamonWallpaper(string filePath)
 	{
 		try
 		{
@@ -475,7 +542,7 @@ for (i=0;i<allDesktops.length;i++) {{
 		}
 	}
 
-	private async Task<(bool Success, string ErrorMessage)> SetMateWallpaper(string filePath)
+	private static async Task<(bool Success, string ErrorMessage)> SetMateWallpaper(string filePath)
 	{
 		try
 		{
@@ -502,7 +569,7 @@ for (i=0;i<allDesktops.length;i++) {{
 		}
 	}
 
-	private async Task<(bool Success, string ErrorMessage)> TryGenericWallpaperMethods(string filePath)
+	private static async Task<(bool Success, string ErrorMessage)> TryGenericWallpaperMethods(string filePath)
 	{
 		try
 		{

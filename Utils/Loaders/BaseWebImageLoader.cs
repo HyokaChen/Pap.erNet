@@ -13,18 +13,17 @@ namespace Pap.erNet.Utils.Loaders;
 /// </summary>
 public class BaseWebImageLoader : IAsyncImageLoader
 {
-	private readonly ParametrizedLogger? _logger;
 	private readonly IHttpClientFactory? _httpClientFactory;
 
 	public BaseWebImageLoader()
 	{
-		_logger = Logger.TryGet(LogEventLevel.Information, "AsyncImageLoader");
+		Logger.TryGet(LogEventLevel.Information, "AsyncImageLoader");
 	}
 
 	public BaseWebImageLoader(IHttpClientFactory httpClientFactory)
 	{
 		_httpClientFactory = httpClientFactory;
-		_logger = Logger.TryGet(LogEventLevel.Information, "AsyncImageLoader");
+		Logger.TryGet(LogEventLevel.Information, "AsyncImageLoader");
 	}
 
 	/// <summary>

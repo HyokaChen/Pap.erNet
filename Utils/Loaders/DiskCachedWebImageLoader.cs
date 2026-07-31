@@ -102,29 +102,24 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader
 			return true;
 		}
 
-		// WebP: RIFF....WEBP
-		if (
-			header.Length >= 12
-			&& header[0] == 0x52
-			&& header[1] == 0x49
-			&& header[2] == 0x46
-			&& header[3] == 0x46
-			&& header[8] == 0x57
-			&& header[9] == 0x45
-			&& header[10] == 0x42
-			&& header[11] == 0x50
-		)
+		switch (header.Length)
 		{
-			return true;
+			// WebP: RIFF....WEBP
+			case >= 12
+				when header[0] == 0x52
+					&& header[1] == 0x49
+					&& header[2] == 0x46
+					&& header[3] == 0x46
+					&& header[8] == 0x57
+					&& header[9] == 0x45
+					&& header[10] == 0x42
+					&& header[11] == 0x50:
+			// AVIF/HEIF: ftyp 出现在第4字节开始
+			case >= 8 when header[4] == 0x66 && header[5] == 0x74 && header[6] == 0x79 && header[7] == 0x70:
+				return true;
+			default:
+				return false;
 		}
-
-		// AVIF/HEIF: ftyp 出现在第4字节开始
-		if (header.Length >= 8 && header[4] == 0x66 && header[5] == 0x74 && header[6] == 0x79 && header[7] == 0x70)
-		{
-			return true;
-		}
-
-		return false;
 	}
 
 	protected override Task SaveToGlobalCache(string url, byte[] imageBytes)

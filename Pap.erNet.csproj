@@ -3,6 +3,7 @@
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
@@ -14,6 +15,11 @@
 		<!--不需要特定于全球化的代码和数据，使用固定模式-->
 		<InvariantGlobalization>true</InvariantGlobalization>
 	</PropertyGroup>
+	<!-- macOS 上不安装 Costura.Fody，需禁用 Fody 避免 "No weavers found" 错误 -->
+	<PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+		<DisableFody>true</DisableFody>
+	</PropertyGroup>
+
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
 		<DefineConstants>$(DefineConstants);ENABLE_XAML_HOT_RELOAD</DefineConstants>
 	</PropertyGroup>
@@ -50,12 +56,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
-		<PackageReference Condition="$(DefineConstants.Contains(ENABLE_XAML_HOT_RELOAD))" Include="Avalonia.Markup.Xaml.Loader" Version="12.1.0" />
-		<PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0">
+		<PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+		<PackageReference
+			Condition="$(DefineConstants.Contains(ENABLE_XAML_HOT_RELOAD))"
+			Include="Avalonia.Markup.Xaml.Loader"
+			Version="12.1.1"
+		/>
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1">
 			<TreatAsUsed>true</TreatAsUsed>
 		</PackageReference>
-		<PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.1" />
 		<PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.18" />
 		<PackageReference Include="Avalonia.ReactiveUI" Version="11.3.8" />
 		<PackageReference Include="Blurhash.ImageSharp" Version="4.0.1" />
@@ -63,11 +73,11 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Condition="$(DefineConstants.Contains(ENABLE_XAML_HOT_RELOAD))" Include="HotAvalonia" Version="3.1.3" />
-		<PackageReference Include="HotAvalonia.Extensions" Version="3.1.3" PrivateAssets="All" />
-		<PackageReference Include="Lucide.Avalonia" Version="0.2.12" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.9" />
+		<PackageReference Condition="$(DefineConstants.Contains(ENABLE_XAML_HOT_RELOAD))" Include="HotAvalonia" Version="3.1.4" />
+		<PackageReference Include="HotAvalonia.Extensions" Version="3.1.4" PrivateAssets="All" />
+		<PackageReference Include="Lucide.Avalonia" Version="0.2.15" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.10" />
 		<PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
 		<PackageReference Include="Costura.Fody" Version="6.2.0" Condition="$([MSBuild]::IsOSPlatform('Windows'))">
 			<PrivateAssets>all</PrivateAssets>
