@@ -6,7 +6,22 @@ public class Wallpaper
 {
 	public string Url { get; set; } = string.Empty;
 
+	/// <summary>
+	/// 缩略图（blurhash 解码后的 WebP base64）。
+	/// 首屏列表先置空秒出，由 ViewModel 后台异步编码后填充并通知刷新。
+	/// </summary>
 	public string Thumbnail { get; set; } = string.Empty;
+
+	/// <summary>
+	/// 服务端返回的 blurhash，用于异步生成缩略图
+	/// </summary>
+	public string Blurhash { get; set; } = string.Empty;
+
+	/// <summary>
+	/// 服务端返回的壁纸主色调（hex/rgb），用于列表加载瞬间的即时色块占位，避免切换闪烁
+	/// </summary>
+	public string Color { get; set; } = string.Empty;
+
 	public string ResolutionRatio { get; set; } = string.Empty;
 	public string Author { get; set; } = string.Empty;
 

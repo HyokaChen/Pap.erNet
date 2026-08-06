@@ -15,6 +15,10 @@ public class BaseWebImageLoader : IAsyncImageLoader
 {
 	private readonly IHttpClientFactory? _httpClientFactory;
 
+	// 网络下载并发上限：限制同时发起的 HTTP 连接数，避免服务器限流；
+	// 缓存命中不经过此信号量，不受影响
+	private readonly SemaphoreSlim _networkSemaphore = new(4, 4);
+
 	public BaseWebImageLoader()
 	{
 		Logger.TryGet(LogEventLevel.Information, "AsyncImageLoader");
@@ -83,17 +87,18 @@ public class BaseWebImageLoader : IAsyncImageLoader
 	}
 
 	/// <inheritdoc />
-	public virtual async Task<Bitmap?> ProvideImageAsync(string url)
+	public virtual async Task<Bitmap?> ProvideImageAsync(string url, CancellationToken cancellationToken = default)
 	{
 		// Null check to prevent issues with null URLs
 		if (string.IsNullOrEmpty(url))
 			return null;
 
-		return await LoadAsync(url).ConfigureAwait(false);
+		return await LoadAsync(url, cancellationToken).ConfigureAwait(false);
 	}
 
 	public void Dispose()
 	{
+		_networkSemaphore.Dispose();
 		GC.SuppressFinalize(this);
 	}
 
@@ -101,8 +106,9 @@ public class BaseWebImageLoader : IAsyncImageLoader
 	///     Attempts to load bitmap
 	/// </summary>
 	/// <param name="url">Target url</param>
+	/// <param name="cancellationToken">取消令牌</param>
 	/// <returns>Bitmap</returns>
-	protected virtual async Task<Bitmap?> LoadAsync(string url)
+	protected virtual async Task<Bitmap?> LoadAsync(string url, CancellationToken cancellationToken)
 	{
 		var internalOrCachedBitmap = await LoadFromGlobalCache(url).ConfigureAwait(false);
 		if (internalOrCachedBitmap != null)
@@ -110,14 +116,20 @@ public class BaseWebImageLoader : IAsyncImageLoader
 
 		try
 		{
-			var externalBytes = await LoadDataFromExternalAsync(url).ConfigureAwait(false);
+			var externalBytes = await LoadDataFromExternalAsync(url, cancellationToken).ConfigureAwait(false);
 			if (externalBytes == null)
 				return null;
 
-			using var memoryStream = new MemoryStream(externalBytes);
-			var bitmap = new Bitmap(memoryStream);
+			// 先落盘再解码：即使解码失败，字节缓存也保留，下次直接命中磁盘
 			await SaveToGlobalCache(url, externalBytes).ConfigureAwait(false);
-			return bitmap;
+
+			// 解码为 CPU 密集操作，强制离开调用线程（可能是 UI 线程）
+			return await Task.Run(() => DecodeBitmap(externalBytes), cancellationToken).ConfigureAwait(false);
+		}
+		catch (OperationCanceledException)
+		{
+			LogHelper.WriteLogAsync($"[图片加载] 取消: {url}");
+			return null;
 		}
 		catch (Exception ex)
 		{
@@ -126,13 +138,20 @@ public class BaseWebImageLoader : IAsyncImageLoader
 		}
 	}
 
+	private static Bitmap? DecodeBitmap(byte[] imageBytes)
+	{
+		using var memoryStream = new MemoryStream(imageBytes);
+		return new Bitmap(memoryStream);
+	}
+
 	/// <summary>
 	///     Receives image bytes from an external source (for example, from the Internet).
 	///     This data will be cached globally (if required by the current implementation)
 	/// </summary>
 	/// <param name="url">Target url</param>
+	/// <param name="cancellationToken">取消令牌</param>
 	/// <returns>Image bytes</returns>
-	protected virtual async Task<byte[]?> LoadDataFromExternalAsync(string url)
+	protected virtual async Task<byte[]?> LoadDataFromExternalAsync(string url, CancellationToken cancellationToken)
 	{
 		LogHelper.WriteLogAsync($"[Network] 开始下载: {url}");
 
@@ -141,74 +160,90 @@ public class BaseWebImageLoader : IAsyncImageLoader
 		const int maxRetries = 3;
 		const int initialDelay = 1000;
 
-		for (var attempt = 0; attempt <= maxRetries; attempt++)
+		await _networkSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+		try
 		{
-			if (attempt > 0)
+			for (var attempt = 0; attempt <= maxRetries; attempt++)
 			{
-				var delay = (int)(initialDelay * Math.Pow(2, attempt - 1));
-				LogHelper.WriteLogAsync($"[Network] 第 {attempt} 次重试，等待 {delay}ms: {url}");
-				await Task.Delay(delay);
-			}
-
-			try
-			{
-				// 阶段1：发送请求并获取响应头（30秒超时，给慢速连接更多时间）
-				using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-				using var request = new HttpRequestMessage(HttpMethod.Get, url);
-				// 注意：不硬编码 Host 头，让 HttpClient 根据 URL 自动设置
-				// 硬编码 Host 会导致 HTTPS SNI 不匹配，引发 SSL 握手失败
-				// 仅当明确需要覆盖时才设置: request.Headers.Host = "c3.wuse.co";
-				request.Headers.ConnectionClose = false;
-
-				LogHelper.WriteLogAsync($"[Network] 发送请求: {url}");
-				using var response = await client
-					.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token)
-					.ConfigureAwait(false);
-				LogHelper.WriteLogAsync($"[Network] 收到响应: {url}, Status={response.StatusCode}");
-
-				if (!response.IsSuccessStatusCode)
+				if (attempt > 0)
 				{
-					LogHelper.WriteLogAsync($"[Network] HTTP 失败: {url}, StatusCode={response.StatusCode}");
-					continue;
+					var delay = (int)(initialDelay * Math.Pow(2, attempt - 1));
+					LogHelper.WriteLogAsync($"[Network] 第 {attempt} 次重试，等待 {delay}ms: {url}");
+					// 重试间隔可被外部取消中断
+					await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
 				}
 
-				// 阶段2：读取响应体（单独给60秒超时，避免内容读取超时）
-				var contentLength = response.Content.Headers.ContentLength;
-				LogHelper.WriteLogAsync($"[Network] 开始读取内容: {url}, Content-Length={contentLength}");
+				try
+				{
+					// 阶段1：发送请求并获取响应头（30秒超时，给慢速连接更多时间）
+					// 外部取消令牌与阶段超时合并（见 CreateLinkedTokenSource）
+					using var headerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+					headerCts.CancelAfter(TimeSpan.FromSeconds(30));
+					using var request = new HttpRequestMessage(HttpMethod.Get, url);
+					// 注意：不硬编码 Host 头，让 HttpClient 根据 URL 自动设置
+					// 硬编码 Host 会导致 HTTPS SNI 不匹配，引发 SSL 握手失败
+					// 仅当明确需要覆盖时才设置: request.Headers.Host = "c3.wuse.co";
+					request.Headers.ConnectionClose = false;
 
-				// 使用流式读取 + 手动超时控制，避免大文件或慢速网络导致 ReadAsByteArrayAsync 超时
-				using var contentCts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
-				await using var responseStream = await response.Content.ReadAsStreamAsync(contentCts.Token).ConfigureAwait(false);
-				using var ms = new MemoryStream();
-				var buffer = new byte[8192];
-				int read;
-				while ((read = await responseStream.ReadAsync(buffer, contentCts.Token).ConfigureAwait(false)) > 0)
-				{
-					await ms.WriteAsync(buffer.AsMemory(0, read), contentCts.Token).ConfigureAwait(false);
+					LogHelper.WriteLogAsync($"[Network] 发送请求: {url}");
+					using var response = await client
+						.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, headerCts.Token)
+						.ConfigureAwait(false);
+					LogHelper.WriteLogAsync($"[Network] 收到响应: {url}, Status={response.StatusCode}");
+
+					if (!response.IsSuccessStatusCode)
+					{
+						LogHelper.WriteLogAsync($"[Network] HTTP 失败: {url}, StatusCode={response.StatusCode}");
+						continue;
+					}
+
+					// 阶段2：读取响应体（单独给60秒超时，避免内容读取超时）
+					var contentLength = response.Content.Headers.ContentLength;
+					LogHelper.WriteLogAsync($"[Network] 开始读取内容: {url}, Content-Length={contentLength}");
+
+					// 使用流式读取 + 手动超时控制，避免大文件或慢速网络导致 ReadAsByteArrayAsync 超时
+					using var bodyCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+					bodyCts.CancelAfter(TimeSpan.FromSeconds(60));
+					await using var responseStream = await response.Content.ReadAsStreamAsync(bodyCts.Token).ConfigureAwait(false);
+					using var ms = new MemoryStream();
+					var buffer = new byte[8192];
+					int read;
+					while ((read = await responseStream.ReadAsync(buffer, bodyCts.Token).ConfigureAwait(false)) > 0)
+					{
+						await ms.WriteAsync(buffer.AsMemory(0, read), bodyCts.Token).ConfigureAwait(false);
+					}
+					var bytes = ms.ToArray();
+					LogHelper.WriteLogAsync($"[Network] 下载成功: {url}, Content-Length={contentLength}, 实际大小={bytes.Length}");
+					return bytes;
 				}
-				var bytes = ms.ToArray();
-				LogHelper.WriteLogAsync($"[Network] 下载成功: {url}, Content-Length={contentLength}, 实际大小={bytes.Length}");
-				return bytes;
-			}
-			catch (OperationCanceledException ex)
-			{
-				if (ex.CancellationToken.IsCancellationRequested)
+				catch (OperationCanceledException ex)
 				{
-					LogHelper.WriteLogAsync($"[Network] 请求超时/取消: {url}");
+					// 外部取消直接冒泡，不再消耗重试次数
+					if (cancellationToken.IsCancellationRequested)
+						throw;
+
+					if (ex.CancellationToken.IsCancellationRequested)
+					{
+						LogHelper.WriteLogAsync($"[Network] 请求超时: {url}");
+					}
+					else
+					{
+						LogHelper.WriteLogAsync($"[Network] 请求被取消(非超时): {url}");
+					}
 				}
-				else
+				catch (Exception ex)
 				{
-					LogHelper.WriteLogAsync($"[Network] 请求被取消(非超时): {url}");
+					LogHelper.WriteLogAsync($"[Network] 第 {attempt} 次尝试失败: {url}, {ex.GetType().Name}: {ex.Message}");
 				}
 			}
-			catch (Exception ex)
-			{
-				LogHelper.WriteLogAsync($"[Network] 第 {attempt} 次尝试失败: {url}, {ex.GetType().Name}: {ex.Message}");
-			}
+
+			LogHelper.WriteLogAsync($"[Network] 所有 {maxRetries + 1} 次尝试均失败: {url}");
+			return null;
 		}
-
-		LogHelper.WriteLogAsync($"[Network] 所有 {maxRetries + 1} 次尝试均失败: {url}");
-		return null;
+		finally
+		{
+			_networkSemaphore.Release();
+		}
 	}
 
 	/// <summary>

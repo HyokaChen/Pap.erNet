@@ -1,10 +1,9 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
-	<Costura>
-		<Unmanaged64Assemblies>
-		av_libglesv2
-		libHarfBuzzSharp
-		libSkiaSharp
-		</Unmanaged64Assemblies>
-	</Costura>
+	<!--
+		原生库（libSkiaSharp/libHarfBuzzSharp/av_libglesv2）不嵌入：
+		Fody 嵌入后会把它们从 CopyLocal 移除，导致增量构建后 bin 缺失、Debug 运行 DllNotFoundException。
+		保持走 NuGet 常规复制（runtimes/win-x64/native/），发布时由 IncludeNativeLibrariesForSelfExtract 处理。
+	-->
+	<Costura />
 </Weavers>

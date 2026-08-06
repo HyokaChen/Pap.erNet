@@ -24,14 +24,14 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader
 	}
 
 	/// <inheritdoc />
-	protected override Task<Bitmap?> LoadFromGlobalCache(string url)
+	protected override async Task<Bitmap?> LoadFromGlobalCache(string url)
 	{
 		var path = Path.Combine(_cacheFolder, CreateMd5(url));
 
 		if (!File.Exists(path))
 		{
 			LogHelper.WriteLogAsync($"[DiskCache] 未命中: {url} -> {path}");
-			return Task.FromResult<Bitmap?>(null);
+			return null;
 		}
 
 		try
@@ -56,9 +56,10 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader
 			}
 
 			fs.Position = 0;
-			var bitmap = new Bitmap(fs);
+			// 解码为 CPU 密集操作，强制离开调用线程（可能是 UI 线程）
+			var bitmap = await Task.Run(() => new Bitmap(fs)).ConfigureAwait(false);
 			LogHelper.WriteLogAsync($"[DiskCache] 加载成功: {url}");
-			return Task.FromResult<Bitmap?>(bitmap);
+			return bitmap;
 		}
 		catch (Exception ex)
 		{
@@ -73,7 +74,7 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader
 				/* ignore */
 			}
 
-			return Task.FromResult<Bitmap?>(null);
+			return null;
 		}
 	}
 

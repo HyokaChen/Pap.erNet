@@ -21,6 +21,7 @@
 		<ItemsControl.Template>
 			<ControlTemplate TargetType="ItemsControl">
 				<ScrollViewer
+					x:Name="WallpaperScrollViewer"
 					HorizontalScrollBarVisibility="Hidden"
 					IsScrollInertiaEnabled="False"
 					IsScrollChainingEnabled="False"

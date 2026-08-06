@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Security;
 using System.Text;
 using System.Text.Json;
@@ -85,8 +85,14 @@ public static class RequestUtil
 
 	/// <summary>
 	/// 获取 Photos 数据（自动附加认证头）
+	/// 流式读取响应体并反序列化，避免整页 JSON 先缓冲为字符串
 	/// </summary>
-	public static async Task<ResponseType?> GetResponse(string listId, string? after = null, string? before = null)
+	public static async Task<ResponseType?> GetResponse(
+		string listId,
+		string? after = null,
+		string? before = null,
+		CancellationToken cancellationToken = default
+	)
 	{
 		try
 		{
@@ -121,12 +127,16 @@ public static class RequestUtil
 				requestMessage.Headers.Add("Authorization", authHeader);
 			}
 
-			using var httpResponseMessage = await PhotosHttpClient.SendAsync(requestMessage).ConfigureAwait(false);
-			var respStr = await httpResponseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
+			using var httpResponseMessage = await PhotosHttpClient
+				.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+				.ConfigureAwait(false);
 
 			if (!httpResponseMessage.IsSuccessStatusCode)
 			{
-				LogHelper.WriteLogAsync($"RequestUtil.GetResponse: 请求失败, StatusCode={httpResponseMessage.StatusCode}, Body={respStr}");
+				var errorBody = await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+				LogHelper.WriteLogAsync(
+					$"RequestUtil.GetResponse: 请求失败, StatusCode={httpResponseMessage.StatusCode}, Body={errorBody}"
+				);
 
 				// 如果是 401，尝试重新认证
 				if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -136,14 +146,19 @@ public static class RequestUtil
 					if (reAuth)
 					{
 						// 重新认证成功，重试一次请求（避免无限递归）
-						return await GetResponseInternal(listId, after, before).ConfigureAwait(false);
+						return await GetResponseInternal(listId, after, before, cancellationToken).ConfigureAwait(false);
 					}
 				}
 
 				return null;
 			}
 
-			return JsonSerializer.Deserialize(respStr, ResponseSourceGenerationContext.Default.ResponseType);
+			return await DeserializeStreamAsync(httpResponseMessage, cancellationToken).ConfigureAwait(false);
+		}
+		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+		{
+			LogHelper.WriteLogAsync($"RequestUtil.GetResponse: 请求已取消, listId={listId}");
+			return null;
 		}
 		catch (Exception ex)
 		{
@@ -155,7 +170,12 @@ public static class RequestUtil
 	/// <summary>
 	/// 内部重试方法（不带 401 重试逻辑，避免无限递归）
 	/// </summary>
-	private static async Task<ResponseType?> GetResponseInternal(string listId, string? after = null, string? before = null)
+	private static async Task<ResponseType?> GetResponseInternal(
+		string listId,
+		string? after = null,
+		string? before = null,
+		CancellationToken cancellationToken = default
+	)
 	{
 		var photosQueryRequest = new PhotosGraphQL
 		{
@@ -186,16 +206,40 @@ public static class RequestUtil
 			requestMessage.Headers.Add("Authorization", authHeader);
 		}
 
-		using var httpResponseMessage = await PhotosHttpClient.SendAsync(requestMessage).ConfigureAwait(false);
-		var respStr = await httpResponseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
+		using var httpResponseMessage = await PhotosHttpClient
+			.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+			.ConfigureAwait(false);
 
-		return JsonSerializer.Deserialize(respStr, ResponseSourceGenerationContext.Default.ResponseType);
+		if (!httpResponseMessage.IsSuccessStatusCode)
+		{
+			LogHelper.WriteLogAsync($"RequestUtil.GetResponseInternal: 请求失败, StatusCode={httpResponseMessage.StatusCode}");
+			return null;
+		}
+
+		return await DeserializeStreamAsync(httpResponseMessage, cancellationToken).ConfigureAwait(false);
+	}
+
+	/// <summary>
+	/// 流式读取响应体并反序列化（正文单独 30 秒超时，与外部取消合并）
+	/// </summary>
+	private static async Task<ResponseType?> DeserializeStreamAsync(
+		HttpResponseMessage httpResponseMessage,
+		CancellationToken cancellationToken
+	)
+	{
+		using var bodyCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+		bodyCts.CancelAfter(TimeSpan.FromSeconds(30));
+
+		await using var stream = await httpResponseMessage.Content.ReadAsStreamAsync(bodyCts.Token).ConfigureAwait(false);
+		return await JsonSerializer
+			.DeserializeAsync(stream, ResponseSourceGenerationContext.Default.ResponseType, bodyCts.Token)
+			.ConfigureAwait(false);
 	}
 
 	/// <summary>
 	/// 获取 Lists 分类列表（自动附加认证头）
 	/// </summary>
-	public static async Task<ListsResponse?> GetListsAsync()
+	public static async Task<ListsResponse?> GetListsAsync(CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -223,8 +267,9 @@ public static class RequestUtil
 				requestMessage.Headers.Add("Authorization", authHeader);
 			}
 
-			using var httpResponseMessage = await PhotosHttpClient.SendAsync(requestMessage).ConfigureAwait(false);
-			var respStr = await httpResponseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
+			using var httpResponseMessage = await PhotosHttpClient
+				.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+				.ConfigureAwait(false);
 
 			if (!httpResponseMessage.IsSuccessStatusCode)
 			{
@@ -232,7 +277,18 @@ public static class RequestUtil
 				return null;
 			}
 
-			return JsonSerializer.Deserialize(respStr, ListsSourceGenerationContext.Default.ListsResponse);
+			using var bodyCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+			bodyCts.CancelAfter(TimeSpan.FromSeconds(30));
+
+			await using var stream = await httpResponseMessage.Content.ReadAsStreamAsync(bodyCts.Token).ConfigureAwait(false);
+			return await JsonSerializer
+				.DeserializeAsync(stream, ListsSourceGenerationContext.Default.ListsResponse, bodyCts.Token)
+				.ConfigureAwait(false);
+		}
+		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+		{
+			LogHelper.WriteLogAsync("RequestUtil.GetLists: 请求已取消");
+			return null;
 		}
 		catch (Exception ex)
 		{

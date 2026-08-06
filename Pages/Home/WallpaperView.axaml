@@ -11,7 +11,7 @@
 	x:Class="Pap.erNet.Pages.Home.WallpaperView"
 	x:DataType="vm:WallpaperViewModel"
 >
-	<Panel PointerEntered="GotEnter" PointerExited="GotExit">
+	<Panel PointerEntered="GotEnter" PointerExited="GotExit" Background="{Binding ColorBrush}">
 		<Image
 			Width="350"
 			Height="200"
