@@ -264,7 +264,7 @@
 										Command="{Binding DeleteCommand}"
 										Foreground="#A0A0A0"
 									>
-										<lucide:LucideIcon Kind="Trash2" Size="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+										<lucide:LucideIcon Kind="Trash" Size="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
 										<Button.Styles>
 											<Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
 												<Setter Property="Background" Value="#CC000000" />

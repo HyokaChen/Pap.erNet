@@ -14,6 +14,8 @@
 			<TrayIcon Icon="/Assets/logo.ico" ToolTipText="Pap.erNet0.0.1" MacOSProperties.IsTemplateIcon="true" Clicked="ShowOrHide">
 				<TrayIcon.Menu>
 					<NativeMenu>
+						<NativeMenuItem Header="显示主窗口" Click="ShowMainWindow" />
+						<NativeMenuItemSeparator />
 						<NativeMenuItem Header="退出" Click="Exit" />
 					</NativeMenu>
 				</TrayIcon.Menu>

@@ -1,5 +1,6 @@
 using System.Security.Authentication;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using HotAvalonia;
@@ -68,19 +69,50 @@ public partial class App : Application
 		base.OnFrameworkInitializationCompleted();
 	}
 
+	/// <summary>
+	/// 托盘图标左键点击（仅 Win32/部分 Linux 桌面触发；macOS 不触发，需走托盘菜单）。
+	/// 可见则隐藏，否则显示并激活。
+	/// </summary>
 	private void ShowOrHide(object? sender, EventArgs e)
 	{
-		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow is { } window)
 		{
-			if (desktop.MainWindow!.IsVisible)
+			if (window.IsVisible)
 			{
-				desktop.MainWindow.Hide();
+				window.Hide();
 			}
-			else if (!desktop.MainWindow.IsVisible)
+			else
 			{
-				desktop.MainWindow.Show();
+				ShowAndActivate(window);
 			}
 		}
+	}
+
+	/// <summary>
+	/// 托盘菜单"显示主窗口"。隐藏时显示；已可见时仅置前激活（不重复 Show）。
+	/// </summary>
+	private void ShowMainWindow(object? sender, EventArgs e)
+	{
+		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow is { } window)
+		{
+			ShowAndActivate(window);
+		}
+	}
+
+	private static void ShowAndActivate(Window window)
+	{
+		if (!window.IsVisible)
+		{
+			window.Show();
+		}
+
+		// 最小化状态直接 Show 不会恢复，需先还原
+		if (window.WindowState == WindowState.Minimized)
+		{
+			window.WindowState = WindowState.Normal;
+		}
+
+		window.Activate();
 	}
 
 	private static IServiceProvider ConfigureServices()
