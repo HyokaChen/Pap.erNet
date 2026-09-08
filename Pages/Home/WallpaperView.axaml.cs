@@ -93,7 +93,8 @@ public partial class WallpaperView : UserControl
 			using var client = new HttpClient(
 				new SocketsHttpHandler
 				{
-					UseProxy = false,
+					// 尊重系统代理：与缩略图客户端一致（Cloudflare CDN 被阻断时系统代理常是唯一路径）
+					UseProxy = true,
 					MaxConnectionsPerServer = 5,
 					AllowAutoRedirect = true,
 					SslOptions = new SslClientAuthenticationOptions

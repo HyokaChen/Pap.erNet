@@ -55,7 +55,8 @@ public class BaseWebImageLoader : IAsyncImageLoader
 	private static readonly HttpClient FallbackClient = new(
 		new SocketsHttpHandler
 		{
-			UseProxy = false,
+			// 与 DI 工厂保持一致：尊重系统代理（Cloudflare CDN 被阻断时系统代理常是唯一路径）
+			UseProxy = true,
 			MaxConnectionsPerServer = 10,
 			AllowAutoRedirect = true,
 			SslOptions = new SslClientAuthenticationOptions
@@ -157,8 +158,9 @@ public class BaseWebImageLoader : IAsyncImageLoader
 
 		var client = GetClient();
 
-		const int maxRetries = 3;
-		const int initialDelay = 1000;
+		var maxRetries = 3;
+		var initialDelay = 1000;
+		var currentUrl = url;
 
 		await _networkSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 		try
@@ -175,31 +177,39 @@ public class BaseWebImageLoader : IAsyncImageLoader
 
 				try
 				{
+					// 每次尝试前重解析：CDN 失效换主机后，本次重试直接用新域名
+					var resolvedUrl = CdnResolver.ResolveCdnUrl(url);
+					if (resolvedUrl != currentUrl)
+					{
+						LogHelper.WriteLogAsync($"[Network] CDN 切换: {currentUrl} -> {resolvedUrl}");
+						currentUrl = resolvedUrl;
+					}
+
 					// 阶段1：发送请求并获取响应头（30秒超时，给慢速连接更多时间）
 					// 外部取消令牌与阶段超时合并（见 CreateLinkedTokenSource）
 					using var headerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 					headerCts.CancelAfter(TimeSpan.FromSeconds(30));
-					using var request = new HttpRequestMessage(HttpMethod.Get, url);
+					using var request = new HttpRequestMessage(HttpMethod.Get, currentUrl);
 					// 注意：不硬编码 Host 头，让 HttpClient 根据 URL 自动设置
-					// 硬编码 Host 会导致 HTTPS SNI 不匹配，引发 SSL 握手失败
+					// 硬编码 Host 会导致 HTTPS SNI 不匹配，引发 SSL 揢手失败
 					// 仅当明确需要覆盖时才设置: request.Headers.Host = "c3.wuse.co";
 					request.Headers.ConnectionClose = false;
 
-					LogHelper.WriteLogAsync($"[Network] 发送请求: {url}");
+					LogHelper.WriteLogAsync($"[Network] 发送请求: {currentUrl}");
 					using var response = await client
 						.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, headerCts.Token)
 						.ConfigureAwait(false);
-					LogHelper.WriteLogAsync($"[Network] 收到响应: {url}, Status={response.StatusCode}");
+					LogHelper.WriteLogAsync($"[Network] 收到响应: {currentUrl}, Status={response.StatusCode}");
 
 					if (!response.IsSuccessStatusCode)
 					{
-						LogHelper.WriteLogAsync($"[Network] HTTP 失败: {url}, StatusCode={response.StatusCode}");
+						LogHelper.WriteLogAsync($"[Network] HTTP 失败: {currentUrl}, StatusCode={response.StatusCode}");
 						continue;
 					}
 
 					// 阶段2：读取响应体（单独给60秒超时，避免内容读取超时）
 					var contentLength = response.Content.Headers.ContentLength;
-					LogHelper.WriteLogAsync($"[Network] 开始读取内容: {url}, Content-Length={contentLength}");
+					LogHelper.WriteLogAsync($"[Network] 开始读取内容: {currentUrl}, Content-Length={contentLength}");
 
 					// 使用流式读取 + 手动超时控制，避免大文件或慢速网络导致 ReadAsByteArrayAsync 超时
 					using var bodyCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -213,7 +223,8 @@ public class BaseWebImageLoader : IAsyncImageLoader
 						await ms.WriteAsync(buffer.AsMemory(0, read), bodyCts.Token).ConfigureAwait(false);
 					}
 					var bytes = ms.ToArray();
-					LogHelper.WriteLogAsync($"[Network] 下载成功: {url}, Content-Length={contentLength}, 实际大小={bytes.Length}");
+					LogHelper.WriteLogAsync($"[Network] 下载成功: {currentUrl}, Content-Length={contentLength}, 实际大小={bytes.Length}");
+					CdnResolver.ReportDownloadSuccess();
 					return bytes;
 				}
 				catch (OperationCanceledException ex)
@@ -225,6 +236,7 @@ public class BaseWebImageLoader : IAsyncImageLoader
 					if (ex.CancellationToken.IsCancellationRequested)
 					{
 						LogHelper.WriteLogAsync($"[Network] 请求超时: {url}");
+						CdnResolver.ReportDownloadFailure();
 					}
 					else
 					{
@@ -234,6 +246,7 @@ public class BaseWebImageLoader : IAsyncImageLoader
 				catch (Exception ex)
 				{
 					LogHelper.WriteLogAsync($"[Network] 第 {attempt} 次尝试失败: {url}, {ex.GetType().Name}: {ex.Message}");
+					CdnResolver.ReportDownloadFailure();
 				}
 			}
 

@@ -137,7 +137,9 @@ public partial class App : Application
 			.ConfigurePrimaryHttpMessageHandler(() =>
 				new SocketsHttpHandler
 				{
-					UseProxy = false,
+					// 尊重系统代理：图片 CDN (Cloudflare) 在直连被 SNI 阻断的网络下，
+					// 系统代理常是唯一可行路径；无代理环境 .NET 会自动回退直连
+					UseProxy = true,
 					MaxConnectionsPerServer = 10,
 					AllowAutoRedirect = true,
 					SslOptions = new System.Net.Security.SslClientAuthenticationOptions
