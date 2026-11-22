@@ -168,16 +168,7 @@ public static class CdnResolver
 			using var client = CreateProbeClient(TimeSpan.FromSeconds(3));
 			LogHelper.WriteLogAsync($"[CDN] 正在解析 CDN 域名: {CdnStatusUrl}");
 			var response = await client.GetStringAsync(CdnStatusUrl).ConfigureAwait(false);
-			string? host = null;
-			foreach (var token in response.Split(['\r', '\n', ' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
-			{
-				if (TryNormalizeImageHost(token, out var candidate))
-				{
-					host = candidate;
-					break;
-				}
-			}
-
+			var host = ParseStatusHost(response);
 			if (host is null)
 			{
 				LogHelper.WriteLogAsync("[CDN] 状态接口未返回合法图片域名");
@@ -192,6 +183,28 @@ public static class CdnResolver
 			LogHelper.WriteLogAsync($"[CDN] 状态接口不可达: {ex.Message}");
 			return null;
 		}
+	}
+
+	/// <summary>
+	/// 从 CDN 状态文件文本中解析第一个合法图片镜像域名。
+	/// 支持多行、注释行、带协议/路径的写法；纯函数，便于单元测试。
+	/// </summary>
+	internal static string? ParseStatusHost(string response)
+	{
+		if (string.IsNullOrWhiteSpace(response))
+		{
+			return null;
+		}
+
+		foreach (var token in response.Split(['\r', '\n', ' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
+		{
+			if (TryNormalizeImageHost(token, out var candidate))
+			{
+				return candidate;
+			}
+		}
+
+		return null;
 	}
 
 	/// <summary>
@@ -265,7 +278,9 @@ public static class CdnResolver
 	/// 把任意已知图片镜像域名（img/cdn/r2/c*.paperapp.net、旧 c*.wuse.co）重写为当前健康域名。
 	/// 只改 scheme/host，保留 path/query/fragment；非图片 URL 原样返回。
 	/// </summary>
-	public static string ResolveCdnUrl(string url)
+	public static string ResolveCdnUrl(string url) => ResolveCdnUrl(url, _resolvedCdnHost);
+
+	internal static string ResolveCdnUrl(string url, string? resolvedCdnHost)
 	{
 		if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url, UriKind.Absolute, out var uri))
 		{
@@ -277,7 +292,7 @@ public static class CdnResolver
 			return url;
 		}
 
-		var targetHost = _resolvedCdnHost;
+		var targetHost = resolvedCdnHost;
 		if (string.IsNullOrEmpty(targetHost) || IsHostCoolingDown(targetHost))
 		{
 			return UpgradeToHttps(uri, url);

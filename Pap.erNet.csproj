@@ -46,6 +46,10 @@
 		<Compile Remove="README\**" />
 		<EmbeddedResource Remove="README\**" />
 		<None Remove="README\**" />
+		<AvaloniaXaml Remove="Tests\**" />
+		<Compile Remove="Tests\**" />
+		<EmbeddedResource Remove="Tests\**" />
+		<None Remove="Tests\**" />
 		<Folder Include="Pages\Settings\" />
 		<Folder Remove="README\" />
 		<None Remove="zanshangma.jpg" />
@@ -53,6 +57,7 @@
 
 	<ItemGroup>
 		<TrimmerRootDescriptor Include="Roots.xml" />
+		<InternalsVisibleTo Include="Pap.erNet.Tests" />
 	</ItemGroup>
 
 	<ItemGroup>
