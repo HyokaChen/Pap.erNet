@@ -58,7 +58,8 @@ public partial class WallpaperView : UserControl
 			var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), fileName);
 			if (!File.Exists(filePath))
 			{
-				var fullUrl = vm.ImageSource.Replace("/thumb", "/full");
+				// 列表里的 URL 可能是旧 CDN 域名；下载原图时重新解析，避免沿用已失效的 host
+				var fullUrl = CdnResolver.ResolveCdnUrl(vm.ImageSource.Replace("/thumb", "/full"));
 				await DownloadAsync(fullUrl, filePath);
 			}
 
@@ -95,6 +96,8 @@ public partial class WallpaperView : UserControl
 				{
 					// 尊重系统代理：与缩略图客户端一致（Cloudflare CDN 被阻断时系统代理常是唯一路径）
 					UseProxy = true,
+					// 被阻断域名通常静默丢包，缩短连接超时，避免原图下载长时间无响应
+					ConnectTimeout = TimeSpan.FromSeconds(5),
 					MaxConnectionsPerServer = 5,
 					AllowAutoRedirect = true,
 					SslOptions = new SslClientAuthenticationOptions
@@ -115,6 +118,8 @@ public partial class WallpaperView : UserControl
 			LogHelper.WriteLogAsync($"Download Url::{fullUrl}");
 
 			using var response = await client.GetAsync(fullUrl, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+			// CDN 异常时可能返回 403/404 的 HTML；不校验会把错误页当图片写入磁盘
+			response.EnsureSuccessStatusCode();
 
 			var totalLen = response.Content.Headers.ContentLength.GetValueOrDefault(-1);
 

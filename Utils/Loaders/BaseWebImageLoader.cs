@@ -57,6 +57,8 @@ public class BaseWebImageLoader : IAsyncImageLoader
 		{
 			// 与 DI 工厂保持一致：尊重系统代理（Cloudflare CDN 被阻断时系统代理常是唯一路径）
 			UseProxy = true,
+			// 被阻断的 CDN 域名通常表现为 TCP/TLS 静默丢包；缩短连接超时，尽快进入重试/换域名
+			ConnectTimeout = TimeSpan.FromSeconds(5),
 			MaxConnectionsPerServer = 10,
 			AllowAutoRedirect = true,
 			SslOptions = new SslClientAuthenticationOptions
@@ -160,7 +162,12 @@ public class BaseWebImageLoader : IAsyncImageLoader
 
 		var maxRetries = 3;
 		var initialDelay = 1000;
-		var currentUrl = url;
+		// 首轮就按当前健康域名发起请求；URL 里的 img/r2/c*.paperapp.net 都可能在当前网络不可达
+		var currentUrl = CdnResolver.ResolveCdnUrl(url);
+		if (!string.Equals(currentUrl, url, StringComparison.Ordinal))
+		{
+			LogHelper.WriteLogAsync($"[Network] CDN 切换: {url} -> {currentUrl}");
+		}
 
 		await _networkSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 		try
@@ -179,7 +186,7 @@ public class BaseWebImageLoader : IAsyncImageLoader
 				{
 					// 每次尝试前重解析：CDN 失效换主机后，本次重试直接用新域名
 					var resolvedUrl = CdnResolver.ResolveCdnUrl(url);
-					if (resolvedUrl != currentUrl)
+					if (!string.Equals(resolvedUrl, currentUrl, StringComparison.Ordinal))
 					{
 						LogHelper.WriteLogAsync($"[Network] CDN 切换: {currentUrl} -> {resolvedUrl}");
 						currentUrl = resolvedUrl;
@@ -204,6 +211,20 @@ public class BaseWebImageLoader : IAsyncImageLoader
 					if (!response.IsSuccessStatusCode)
 					{
 						LogHelper.WriteLogAsync($"[Network] HTTP 失败: {currentUrl}, StatusCode={response.StatusCode}");
+						// 403/限流/网关错误通常意味着当前 CDN 线路不可用；计入失败并在达到阈值后换域名。
+						// 404 等资源级错误不触发换域名，避免单张坏图导致整批切换。
+						if (
+							response.StatusCode
+							is HttpStatusCode.Forbidden
+								or HttpStatusCode.RequestTimeout
+								or HttpStatusCode.TooManyRequests
+								or HttpStatusCode.BadGateway
+								or HttpStatusCode.ServiceUnavailable
+								or HttpStatusCode.GatewayTimeout
+						)
+						{
+							CdnResolver.ReportDownloadFailure();
+						}
 						continue;
 					}
 

@@ -30,28 +30,31 @@ public class RamCachedWebImageLoader : BaseWebImageLoader
 		if (string.IsNullOrEmpty(url))
 			return null;
 
+		// 内存缓存/在途去重同样使用与域名无关的键，CDN 切换不会产生重复加载
+		var cacheKey = CdnResolver.GetStableCacheKey(url);
+
 		// 检查是否已在内存缓存中
-		if (_memoryCache.TryGet(url, out var cached))
+		if (_memoryCache.TryGet(cacheKey, out var cached))
 		{
 			LogHelper.WriteLogAsync($"[MemoryCache] 命中: {url}");
 			return cached;
 		}
 
 		LogHelper.WriteLogAsync($"[MemoryCache] 未命中，开始加载: {url}");
-		var bitmapTask = _inflight.GetOrAdd(url, _ => LoadAsync(url, cancellationToken));
+		var bitmapTask = _inflight.GetOrAdd(cacheKey, _ => LoadAsync(url, cancellationToken));
 		var bitmap = await bitmapTask.ConfigureAwait(false);
 
 		// 完成后立即移除在途条目（仅移除自己）：
 		// 1) 失败时允许下次重试；2) 避免 Task.Result 强引用位图导致 LRU 淘汰失效
-		if (_inflight.TryGetValue(url, out var current) && ReferenceEquals(current, bitmapTask))
+		if (_inflight.TryGetValue(cacheKey, out var current) && ReferenceEquals(current, bitmapTask))
 		{
-			_inflight.TryRemove(url, out _);
+			_inflight.TryRemove(cacheKey, out _);
 		}
 
 		// If load failed - do not cache, next load attempt will try to load image again
 		if (bitmap != null)
 		{
-			_memoryCache.Add(url, bitmap);
+			_memoryCache.Add(cacheKey, bitmap);
 		}
 
 		return bitmap;

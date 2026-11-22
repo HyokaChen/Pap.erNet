@@ -26,7 +26,10 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader
 	/// <inheritdoc />
 	protected override async Task<Bitmap?> LoadFromGlobalCache(string url)
 	{
-		var path = Path.Combine(_cacheFolder, CreateMd5(url));
+		// 缓存键去掉 CDN 域名：img/r2/c11 上的同一张图 path 完全一致，
+		// 域名切换后仍能命中旧缓存，避免整批图片重新下载。
+		var cacheKey = CdnResolver.GetStableCacheKey(url);
+		var path = Path.Combine(_cacheFolder, CreateMd5(cacheKey));
 
 		if (!File.Exists(path))
 		{
@@ -125,7 +128,8 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader
 
 	protected override Task SaveToGlobalCache(string url, byte[] imageBytes)
 	{
-		var path = Path.Combine(_cacheFolder, CreateMd5(url));
+		var cacheKey = CdnResolver.GetStableCacheKey(url);
+		var path = Path.Combine(_cacheFolder, CreateMd5(cacheKey));
 		var tempPath = path + ".tmp";
 		try
 		{
