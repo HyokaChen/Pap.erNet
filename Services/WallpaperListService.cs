@@ -1,11 +1,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Blurhash.ImageSharp;
+using Blurhash;
 using Pap.erNet.Models;
 using Pap.erNet.Utils;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Webp;
+using Sdcb.SimdCodecs.Abstractions;
+using Sdcb.SimdCodecs.Webp;
 
 namespace Pap.erNet.Services;
 
@@ -16,6 +16,8 @@ public class WallpaperListService
 
 	// 每分类缓存上限：视口内仅需数条，100 条足够覆盖快速滚动；防止 ∞ 滚动后内存膨胀
 	private const int MaxCachedPerList = 100;
+	private const int ThumbnailWidth = 560;
+	private const int ThumbnailHeight = 320;
 
 	/// <summary>
 	/// 获取指定分类最近一次加载的壁纸列表（用于切换时秒显 blurhash 占位）
@@ -175,12 +177,40 @@ public class WallpaperListService
 	/// <summary>
 	/// 由 blurhash 解码生成 560x320 WebP base64 缩略图（CPU 密集，须在后台线程执行）
 	/// </summary>
-	private static string EncodeBlurhash(string blurhash)
+	internal static string EncodeBlurhash(string blurhash)
 	{
 		try
 		{
-			using var image = Blurhasher.Decode(blurhash, 560, 320);
-			return image.ToBase64String(WebpFormat.Instance);
+			var rgba = new byte[ThumbnailWidth * ThumbnailHeight * 4];
+			var decoder = new StreamedDecoder(
+				blurhash,
+				ThumbnailWidth,
+				ThumbnailHeight,
+				(ReadOnlySpan<StreamedPixel> chunk) =>
+				{
+					foreach (var pixel in chunk)
+					{
+						var offset = ((pixel.Y * ThumbnailWidth) + pixel.X) * 4;
+						rgba[offset] = (byte)Math.Clamp(MathUtils.LinearTosRgb(pixel.Red), 0, 255);
+						rgba[offset + 1] = (byte)Math.Clamp(MathUtils.LinearTosRgb(pixel.Green), 0, 255);
+						rgba[offset + 2] = (byte)Math.Clamp(MathUtils.LinearTosRgb(pixel.Blue), 0, 255);
+						rgba[offset + 3] = 255;
+					}
+				},
+				1.0,
+				null
+			);
+			decoder.Run();
+
+			var webp = WebpEncoder.EncodeLossy(
+				rgba,
+				ThumbnailWidth,
+				ThumbnailHeight,
+				PixelFormat.Rgba32,
+				new WebpLossyEncodeOptions { Quality = 80 },
+				ThumbnailWidth * 4
+			);
+			return Convert.ToBase64String(webp);
 		}
 		catch (Exception ex)
 		{
