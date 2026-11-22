@@ -70,8 +70,8 @@ public partial class WallpaperListView : UserControl
 		if (vm == null)
 			return;
 
-		_scrollViewer ??=
-			this.FindControl<ScrollViewer>("WallpaperListIC") ?? this.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault();
+		_scrollViewer ??= this.FindControl<ScrollViewer>("WallpaperListIC")
+			?? this.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault();
 		if (_scrollViewer == null)
 			return;
 

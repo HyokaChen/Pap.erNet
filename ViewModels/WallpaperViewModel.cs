@@ -83,45 +83,42 @@ public class WallpaperViewModel : ViewModelBase
 	{
 		get
 		{
-			var color = ColorCache.GetOrAdd(
-				_wallpaper.Color,
-				static c =>
+			var color = ColorCache.GetOrAdd(_wallpaper.Color, static c =>
+			{
+				if (string.IsNullOrEmpty(c))
+					return null;
+				try
 				{
-					if (string.IsNullOrEmpty(c))
-						return null;
-					try
-					{
-						if (c.StartsWith('#'))
-							return Color.Parse(c);
+					if (c.StartsWith('#'))
+						return Color.Parse(c);
 
-						// rgb(r, g, b) 格式兼容
-						if (c.StartsWith("rgb", StringComparison.OrdinalIgnoreCase))
+					// rgb(r, g, b) 格式兼容
+					if (c.StartsWith("rgb", StringComparison.OrdinalIgnoreCase))
+					{
+						var start = c.IndexOf('(') + 1;
+						var end = c.IndexOf(')');
+						if (start > 0 && end > start)
 						{
-							var start = c.IndexOf('(') + 1;
-							var end = c.IndexOf(')');
-							if (start > 0 && end > start)
+							var parts = c[start..end].Split(',', ' ');
+							if (
+								parts.Length >= 3
+								&& byte.TryParse(parts[0], out var r)
+								&& byte.TryParse(parts[1], out var g)
+								&& byte.TryParse(parts[2], out var b)
+							)
 							{
-								var parts = c[start..end].Split(',', ' ');
-								if (
-									parts.Length >= 3
-									&& byte.TryParse(parts[0], out var r)
-									&& byte.TryParse(parts[1], out var g)
-									&& byte.TryParse(parts[2], out var b)
-								)
-								{
-									return new Color(255, r, g, b);
-								}
+								return new Color(255, r, g, b);
 							}
 						}
+					}
 
-						return Color.Parse(c);
-					}
-					catch
-					{
-						return null;
-					}
+					return Color.Parse(c);
 				}
-			);
+				catch
+				{
+					return null;
+				}
+			});
 			return color.HasValue ? new SolidColorBrush(color.Value) : null;
 		}
 	}

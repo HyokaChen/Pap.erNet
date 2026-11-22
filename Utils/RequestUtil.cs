@@ -10,49 +10,47 @@ public static class RequestUtil
 {
 	private const string PAPER_URL = "https://paper.nsns.in/graphql";
 
-	private static string GraphQLQuery =>
-		"""
-			query Photos($after: String, $before: String, $listId: ID, $filters: PhotosFiltersInput) {
-			  photos(after: $after, before: $before, listId: $listId, filters: $filters) {
-			    __typename
-			    after
-			    before
-			    listId
-			    entries {
-			      __typename
-			      id
-			      type
-			      color
-			      blurHash
-			      creator
-			      urls {
-			        __typename
-			        thumb
-			      }
-			      width
-			      height
-			      link
-			      linkable
-			      heading
-			    }
-			  }
-			}
-			""";
+	private static string GraphQLQuery => """
+		query Photos($after: String, $before: String, $listId: ID, $filters: PhotosFiltersInput) {
+		  photos(after: $after, before: $before, listId: $listId, filters: $filters) {
+		    __typename
+		    after
+		    before
+		    listId
+		    entries {
+		      __typename
+		      id
+		      type
+		      color
+		      blurHash
+		      creator
+		      urls {
+		        __typename
+		        thumb
+		      }
+		      width
+		      height
+		      link
+		      linkable
+		      heading
+		    }
+		  }
+		}
+		""";
 
-	private static string ListsQuery =>
-		"""
-			query Lists {
-			  lists {
-			    __typename
-			    id
-			    name
-			    type
-			    link
-			    position
-			    description
-			  }
-			}
-			""";
+	private static string ListsQuery => """
+		query Lists {
+		  lists {
+		    __typename
+		    id
+		    name
+		    type
+		    link
+		    position
+		    description
+		  }
+		}
+		""";
 
 	private static HttpClient PhotosHttpClient { get; } =
 		new(
